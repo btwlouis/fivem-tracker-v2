@@ -178,7 +178,7 @@ export async function getServers() {
 
   console.log(`Fetched and saved servers in ${time}ms`);
 
-  deleteOldServers();
+  //deleteOldServers();
 }
 
 export async function deleteOldServers() {
