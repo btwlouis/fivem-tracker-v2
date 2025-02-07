@@ -169,7 +169,7 @@ export async function getServers() {
             },          
         });
 
-    } catch (err) {
+    } catch {
         
     }
   });
