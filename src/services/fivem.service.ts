@@ -106,10 +106,6 @@ export async function getServers() {
 
   await fetchServers(GameName.FiveM, async (server) => {
     try {
-        if(!server.locale || server.localeCountry != "DE") {
-          return 
-        }
-        
         await prisma.servers.upsert({
             where: { id: server.id },
             update: {
@@ -185,9 +181,12 @@ export async function getServers() {
   deleteOldServers();
 }
 
-// delete old servers where servers.updated_at < now - 30 day
 export async function deleteOldServers() {
-//   const result: any = await serverRepository.deleteOldServers();
-
-//   console.log(`Deleted ${result?.affectedRows} old servers`);
+  await prisma.server_history.deleteMany({
+    where: {
+      timestamp: {
+        lt: new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000),
+      },
+    },
+  });
 }
