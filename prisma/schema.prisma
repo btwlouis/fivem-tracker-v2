@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model server_history {
+  id        String   @db.VarChar(255)
+  clients   Int
+  timestamp DateTime @default(now()) @db.Timestamp(0)
+  serverId  String   @db.VarChar(255) 
+  server    servers  @relation(fields: [serverId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([id, timestamp])
+  @@index([serverId], map: "serverId") // Index for serverId
+  @@index([timestamp], map: "timestamp")
+}
+
+model servers {
+  id                 String           @id @db.VarChar(255)
+  locale             String           @db.VarChar(255)
+  localeCountry      String           @db.VarChar(255)
+  hostname           String?          @db.Text
+  joinId             String?          @db.VarChar(255)
+  projectName        String?          @db.VarChar(255)
+  projectDescription String           @db.LongText
+  upvotePower        Int?
+  burstPower         Int?
+  mapname            String?          @db.VarChar(255)
+  gametype           String?          @db.VarChar(255)
+  gamename           String?          @db.VarChar(255)
+  private            Boolean?
+  scriptHookAllowed  Boolean?
+  enforceGameBuild   String?          @db.VarChar(255)
+  bannerConnecting   String?          @db.Text
+  bannerDetail       String?          @db.Text
+  server             String?          @db.VarChar(255)
+  playersMax         Int?
+  playersCurrent     Int?
+  iconVersion        Int?
+  tags               String?          @db.LongText
+  resources          String?          @db.LongText
+  players            String?          @db.LongText
+  updated_at         DateTime         @default(now()) @db.Timestamp(0)
+  created_at         DateTime         @default(now()) @db.Timestamp(0)
+  server_history     server_history[]  // Relation to server_history
+}
