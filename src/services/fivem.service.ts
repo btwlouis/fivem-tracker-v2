@@ -106,6 +106,10 @@ export async function getServers() {
 
   await fetchServers(GameName.FiveM, async (server) => {
     try {
+        if(!server.locale || server.localeCountry != "DE") {
+          return 
+        }
+        
         await prisma.servers.upsert({
             where: { id: server.id },
             update: {
