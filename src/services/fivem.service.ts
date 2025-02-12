@@ -59,7 +59,7 @@ async function readBodyToServers(
   frameReader.read();
 
   await deferred.promise;
-
+  
   console.log(
     "Times: decode",
     decodeTime,
@@ -101,84 +101,145 @@ export async function fetchServers(
 
 import prisma from "@/lib/prisma";
 
+function sanitizeString(input: string): string {
+  if (typeof input !== 'string') return input;
+  const sanitized = input.replace(/[^\x20-\x7E]/g, '').trim();
+  return sanitized.length > 255 ? sanitized.slice(0, 255) : sanitized;
+}
+
+interface ServerData {
+  upvotePower: number;
+  burstPower: number;
+  private: boolean;
+  scriptHookAllowed: boolean;
+  playersMax: number;
+  playersCurrent: number;
+  iconVersion: number;
+
+  id: string;
+  locale: string;
+  localeCountry: string;
+  hostname: string;
+  joinId: string;
+  projectName: string;
+  projectDescription: string;
+  mapname: string;
+  gametype: string;
+  gamename: string;
+  enforceGameBuild: string;
+  bannerConnecting: string;
+  bannerDetail: string;
+  server: string;
+}
+
 export async function getServers() {
-    const perf = performance.now();
+  const perf = performance.now();
+  const servers: ServerData[] = [];
+  const serverHistories = [];
+  const timestamp = new Date();
 
   await fetchServers(GameName.FiveM, async (server) => {
     try {
-        await prisma.servers.upsert({
-            where: { id: server.id },
-            update: {
-                locale: server.locale,
-                localeCountry: server.localeCountry,
-                hostname: server.hostname,
-                joinId: server.joinId ?? "",
-                projectName: server.projectName,
-                projectDescription: server.projectDescription ?? "",
-                upvotePower: server.upvotePower ?? 0,
-                burstPower: server.burstPower ?? 0,
-                mapname: server.mapname ?? "",
-                gametype: server.gametype ?? "",
-                gamename: server.gamename ?? "",
-                private: server.private ?? false,
-                scriptHookAllowed: server.scriptHookAllowed ?? false,
-                enforceGameBuild: server.enforceGameBuild ?? "",
-                bannerConnecting: server.bannerConnecting ?? "",
-                bannerDetail: server.bannerDetail ?? "",
-                server: server.server ?? "",
-                playersMax: server.playersMax ?? 0,
-                playersCurrent: server.playersCurrent ?? 0,
-                iconVersion: server.iconVersion ?? 0,
-                server_history: {
-                    create: {
-                        id: server.id,
-                        clients: server.playersCurrent ?? 0, // Example: number of clients
-                    },
-                },
-            },
-            create: {
-                id: server.id,
-                locale: server.locale,
-                localeCountry: server.localeCountry,
-                hostname: server.hostname,
-                joinId: server.joinId ?? "",
-                projectName: server.projectName,
-                projectDescription: server.projectDescription ?? "",
-                upvotePower: server.upvotePower ?? 0,
-                burstPower: server.burstPower ?? 0,
-                mapname: server.mapname ?? "",
-                gametype: server.gametype ?? "",
-                gamename: server.gamename ?? "",
-                private: server.private ?? false,
-                scriptHookAllowed: server.scriptHookAllowed ?? false,
-                enforceGameBuild: server.enforceGameBuild ?? "",
-                bannerConnecting: server.bannerConnecting ?? "",
-                bannerDetail: server.bannerDetail ?? "",
-                server: server.server ?? "",
-                playersMax: server.playersMax ?? 0,
-                playersCurrent: server.playersCurrent ?? 0,
-                iconVersion: server.iconVersion ?? 0,
-                    
-                server_history: {
-                    create: {
-                        id: server.id,
-                        clients: server.playersCurrent ?? 0, // Example: number of clients
-                    },
-                },
+      const data = {
+        upvotePower: server.upvotePower ?? 0,
+        burstPower: server.burstPower ?? 0,
+        private: server.private ?? false,
+        scriptHookAllowed: server.scriptHookAllowed ?? false,
+        playersMax: server.playersMax ?? 0,
+        playersCurrent: server.playersCurrent ?? 0,
+        iconVersion: server.iconVersion ?? 0,
 
-            },          
-        });
+        id: sanitizeString(server.id),
+        locale: sanitizeString(server.locale),
+        localeCountry: sanitizeString(server.localeCountry),
+        hostname: sanitizeString(server.hostname),
+        joinId: sanitizeString(server.joinId ?? ""),
+        projectName: sanitizeString(server.projectName),
+        projectDescription: sanitizeString(server.projectDescription ?? ""),
+        mapname: sanitizeString(server.mapname ?? ""),
+        gametype: sanitizeString(server.gametype ?? ""),
+        gamename: sanitizeString(server.gamename ?? ""),
+        enforceGameBuild: sanitizeString(server.enforceGameBuild ?? ""),
+        bannerConnecting: sanitizeString(server.bannerConnecting ?? ""),
+        bannerDetail: sanitizeString(server.bannerDetail ?? ""),
+        server: sanitizeString(server.server ?? ""),
+      };
 
-    } catch {
-        
+      servers.push(data);
+
+      serverHistories.push({
+        id: server.id,
+        clients: server.playersCurrent ?? 0,
+        timestamp: timestamp
+      });
+    } catch (error) {
+      console.error(`Error processing server ${server.id}:`, error);
     }
   });
 
+  const ids = servers.map((server) => server.id);
+
+  const existingServers = await prisma.servers.findMany({
+    where: { id: { in: ids } },
+    select: { id: true }
+  });
+
+  const existingIds = new Set(existingServers.map(s => s.id));
+
+  const toUpdate = servers.filter(server => existingIds.has(server.id));
+  const toCreate = servers.filter(server => !existingIds.has(server.id));
+
+  const batchSize = 5000;
+
+  for (let i = 0; i < toCreate.length; i += batchSize) {
+    const batch = toCreate.slice(i, i + batchSize);
+
+    await prisma.servers.createMany({
+      data: batch,
+      skipDuplicates: true
+    });
+
+    const relatedHistories = batch.map(server => {
+      return {
+        id: server.id, 
+        clients: server.playersCurrent ?? 0,
+        timestamp: timestamp
+      };
+    });
+
+    await prisma.server_history.createMany({
+      data: relatedHistories,
+      skipDuplicates: true
+    });
+  }
+
+  for (let i = 0; i < toUpdate.length; i += batchSize) {
+    const batch = toUpdate.slice(i, i + batchSize);
+    const updates = batch.map((server) => {
+      return prisma.servers.update({
+        where: { id: server.id },
+        data: server
+      });
+    });
+
+    await prisma.$transaction(updates);
+
+    const updatedHistories = batch.map(server => {
+      return {
+        id: server.id,
+        clients: server.playersCurrent ?? 0,
+        timestamp: timestamp
+      };
+    });
+
+    await prisma.server_history.createMany({
+      data: updatedHistories,
+      skipDuplicates: true
+    });
+  }
+
   const time = performance.now() - perf;
-
   console.log(`Fetched and saved servers in ${time}ms`);
-
-  //deleteOldServers();
 }
 
 export async function deleteOldServers() {

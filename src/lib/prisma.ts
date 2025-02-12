@@ -8,7 +8,9 @@ if (process.env.NODE_ENV === 'production') {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (!(global as any).prisma) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (global as any).prisma = new PrismaClient();
+    (global as any).prisma = new PrismaClient({
+      log: ['info'],
+    });
   }
   
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

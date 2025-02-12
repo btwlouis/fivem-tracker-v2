@@ -2,21 +2,22 @@ import prisma from '@/lib/prisma';
 import { NextRequest } from 'next/server';
 
 export async function GET(request: NextRequest) {
-    const page = request.nextUrl.searchParams.get('page');
-    const pageNumber = page ? parseInt(page, 10) : 1;
+  const page = request.nextUrl.searchParams.get('page');
+  const localeCountry = request.nextUrl.searchParams.get('locale');
 
-    const limit = 50;
-    const offset = (pageNumber - 1) * limit;
+  const pageNumber = page ? parseInt(page, 10) : 1;
 
-    const servers = await prisma.servers.findMany(
-        {
-            take: limit,
-            skip: offset,
-            orderBy: {
-                playersCurrent: 'desc',
-            },
-        },
-    );
+  const limit = 50;
+  const offset = (pageNumber - 1) * limit;
 
-    return Response.json(servers);
+  const servers = await prisma.servers.findMany({
+    take: limit,
+    skip: offset,
+    where: localeCountry ? { localeCountry } : {},
+    orderBy: {
+      playersCurrent: 'desc',
+    },
+  });
+
+  return Response.json(servers);
 }

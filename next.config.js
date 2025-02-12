@@ -1,7 +1,6 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+const nextConfig = {
   images: {
+    dangerouslyAllowSVG: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -16,4 +15,4 @@ const nextConfig: NextConfig = {
 
 };
 
-export default nextConfig;
+module.exports = nextConfig

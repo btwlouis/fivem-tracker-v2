@@ -4,13 +4,11 @@ import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFilter, faSort, faSyncAlt } from "@fortawesome/free-solid-svg-icons";
 
-
-
-
 const Header = () => {
-    const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [filterOpen, setFilterOpen] = useState(false);
   const [languages, setLanguages] = useState([])
+  const [search, setSearch] = useState("")
 
   const fetchLanguages = async () => {
     try {
@@ -22,6 +20,17 @@ const Header = () => {
         console.error("Failed to fetch servers:", error);
     } 
   };
+
+  const filterByLanguage = (language: string) => {
+    window.location.href = `/?locale=${language}`
+  }
+
+  const searchHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const search = e.target.value.toLowerCase();
+    setSearch(search)
+  }
+  
+  const filteredLanguages = languages.filter((x: string) => x.toLowerCase().includes(search))
     
   useEffect(() => {
     fetchLanguages();
@@ -46,7 +55,7 @@ const Header = () => {
         {/* Filter Button */}
         <div className="relative">
           <button
-            className="p-2 bg-gray-800 rounded hover:bg-orange-500 transition"
+            className="px-4 py-2 bg-gray-800 rounded hover:bg-orange-500 transition"
             onClick={() => setFilterOpen(!filterOpen)}
           >
             <FontAwesomeIcon icon={faFilter} />
@@ -56,14 +65,17 @@ const Header = () => {
               <input
                 type="text"
                 placeholder="Search country..."
+                onChange={searchHandler}
                 className="w-full p-1 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
               <div className="mt-2 max-h-40 overflow-y-auto">
                 {loading ? (
                     <p className="text-white">Loading...</p>
                 ) : (
-                    languages.map((language) => (
-                        <div key={language} className="p-1 rounded bg-gray-700 text-white border border-gray-600 mt-1">{language}</div>
+                    filteredLanguages.map((language) => (
+                        <div key={language} className="p-1 rounded bg-gray-700 text-white border border-gray-600 mt-1" onClick={() => filterByLanguage(language)}>
+                            {language}
+                        </div>
                     ))
                 )}
               </div>
@@ -72,12 +84,12 @@ const Header = () => {
         </div>
 
         {/* Sort Button */}
-        <button className="p-2 bg-gray-800 rounded hover:bg-orange-500 transition">
+        <button className="px-4 py-2 bg-gray-800 rounded hover:bg-orange-500 transition">
           <FontAwesomeIcon icon={faSort} />
         </button>
 
         {/* Reset Filters Button */}
-        <button className="p-2 bg-gray-800 rounded hover:bg-orange-500 transition">
+        <button className="px-4 py-2 bg-gray-800 rounded hover:bg-orange-500 transition">
           <FontAwesomeIcon icon={faSyncAlt} />
         </button>
       </div>
