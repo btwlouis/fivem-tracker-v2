@@ -161,7 +161,6 @@ export async function getServers() {
   try {
     const perf = performance.now();
   const servers: ServerData[] = [];
-  const serverHistories = [];
   const timestamp = new Date();
 
   await fetchServers(GameName.FiveM, async (server) => {
@@ -192,12 +191,6 @@ export async function getServers() {
       };
 
       servers.push(data);
-
-      serverHistories.push({
-        server_id: server.id,
-        clients: server.playersCurrent ?? 0,
-        timestamp: timestamp
-      });
     } catch (error) {
       console.error(`Error processing server ${server.id}:`, error);
     }
@@ -269,8 +262,6 @@ export async function getServers() {
   } catch(error) {
       console.error('Failed to fetch servers:', error);
   }
-
-  
 }
 
 

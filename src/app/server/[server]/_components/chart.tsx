@@ -31,16 +31,18 @@ interface TimeRanges {
   timeRanges: ["1h", "1d", "7d", "1m"];
 }
 
-const timeRanges: TimeRanges['timeRanges'] = ["1h", "1d", "7d", "1m"];
+const timeRanges: TimeRanges["timeRanges"] = ["1h", "1d", "7d", "1m"];
 
-const convertToChartData = (rawData: ServerHistory[], range: TimeRanges['timeRanges'][number]) => {
-  console.log(rawData);
-  const filteredData = rawData.filter(item => {
+const convertToChartData = (
+  rawData: ServerHistory[],
+  range: TimeRanges["timeRanges"][number]
+) => {
+  const filteredData = rawData.filter((item) => {
     const now = new Date();
     const createdAt = new Date(item.timestamp);
     const diffTime = now.getTime() - createdAt.getTime();
-    
-    switch(range) {
+
+    switch (range) {
       case "1h":
         return diffTime <= 60 * 60 * 1000; // 1 hour
       case "1d":
@@ -54,34 +56,45 @@ const convertToChartData = (rawData: ServerHistory[], range: TimeRanges['timeRan
     }
   });
 
-  return filteredData.map(item => {
+  return filteredData.map((item) => {
     const dateObj = new Date(item.timestamp);
+
     return {
-      time: range === "1h" || range === "1d"
-        ? dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) 
-        : dateObj.toLocaleDateString([], { month: "short", day: "2-digit" }) + 
-          " " + dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      Clients: item.clients
+      timestamp: dateObj.toISOString(), // Preserve full date for XAxis
+      formattedTime:
+        range === "1h" || range === "1d"
+          ? dateObj.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : dateObj.toLocaleDateString([], { month: "short", day: "2-digit" }) +
+            " " +
+            dateObj.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+      clients: item.clients,
     };
   });
-
-}
+};
 
 export function Chart({ data }: { data: ServerHistory[] }) {
-  const [range, setRange] = useState<TimeRanges['timeRanges'][number]>(timeRanges[0]);
+  const [range, setRange] = useState<TimeRanges["timeRanges"][number]>(
+    timeRanges[0]
+  );
   const [chartData, setChartData] = useState(convertToChartData(data, range));
 
   const handleTimeRangeChange = (newRange: string) => {
-    const range = newRange as TimeRanges['timeRanges'][number];
+    const range = newRange as TimeRanges["timeRanges"][number];
     setRange(range);
     setChartData(convertToChartData(data, range));
-  };  
-  
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Line Chart</CardTitle>
-        <CardDescription>January - June 2024</CardDescription>
+        <CardTitle>Player Activity</CardTitle>
+        <CardDescription>Last recorded player counts</CardDescription>
       </CardHeader>
 
       <CardFooter className="flex-col items-start gap-2 text-sm">
@@ -90,8 +103,7 @@ export function Chart({ data }: { data: ServerHistory[] }) {
             <Button
               key={item}
               onClick={() => handleTimeRangeChange(item)}
-              variant={range === item ? "default" : "secondary"}
-            >
+              variant={range === item ? "default" : "secondary"}>
               {item}
             </Button>
           ))}
@@ -114,7 +126,10 @@ export function Chart({ data }: { data: ServerHistory[] }) {
               axisLine={false}
               tickMargin={8}
               tickFormatter={(value) =>
-                new Date(value).toLocaleString("default", { month: "short" })
+                new Date(value).toLocaleDateString("default", {
+                  month: "short",
+                  day: "2-digit",
+                })
               }
             />
             <ChartTooltip

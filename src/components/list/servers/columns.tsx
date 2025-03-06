@@ -49,10 +49,16 @@ export const columns: ColumnDef<Server>[] = [
     accessorKey: "localeCountry",
     header: "Country",
     cell: (data) => {
+      const localeCountry = data.row.original.localeCountry;
       return (
-        <Suspense fallback={<>...</>}>
-          <Flag countryCode={data.row.original.localeCountry} className="w-6 h-6" />
-        </Suspense>
+        <div>
+          {localeCountry}
+
+          <Suspense fallback={<>...</>}>
+            <Flag countryCode={localeCountry} className="w-6 h-6" />
+          </Suspense>
+        </div>
+
       );
     },
   },

@@ -29,20 +29,20 @@ import type { Server, ServerHistory } from "@prisma/client";
 
 async function getServer(serverId: string) {
   try {
-    const serverData = await prisma.server.findUnique({
+    const serverData = (await prisma.server.findUnique({
       where: {
         id: serverId,
       },
-    }) as Server;
+    })) as Server;
 
-    const serverHistory = await prisma.serverHistory.findMany({
+    const serverHistory = (await prisma.serverHistory.findMany({
       where: {
         server_id: serverId,
       },
       orderBy: {
         timestamp: "desc",
       },
-    }) as ServerHistory[];
+    })) as ServerHistory[];
 
     return {
       serverData,
@@ -82,35 +82,33 @@ export default async function Server({
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {/* Back Button */}
       <Link
         href="/"
         className="flex items-center text-sm text-muted-foreground hover:underline">
         <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Main Page
+        Back
       </Link>
 
-      {/* Server Card */}
       <Card className="shadow-lg">
-        {JSON.stringify(serverData)}
+        {serverData.bannerDetail && (
+          <Image
+            src={serverData.bannerDetail}
+            alt="Server Banner"
+            width={1865}
+            height={108}
+            className="w-full h-36 object-cover"
+            unoptimized={true}
+          />
+        )}
 
         <CardHeader className="flex flex-row items-center space-x-4">
-          {serverData.bannerDetail && (
+          {serverData.iconVersion && serverData.id && (
             <Image
               src={`https://servers-frontend.fivem.net/api/servers/icon/${serverData.id}/${serverData.iconVersion}.png`}
               width={48}
               height={48}
               alt="server icon"
             />
-
-            // <Image
-            //   src={serverData.logo}
-            //   alt="Server Banner"
-            //   width={100}
-            //   height={100}
-            //   className="rounded-lg shadow-sm"
-            //   unoptimized={true}
-            // />
           )}
           <div>
             <CardTitle>
@@ -123,13 +121,11 @@ export default async function Server({
           </div>
         </CardHeader>
         <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {/* Server Version */}
           <div className="flex items-center space-x-2">
             <ServerIcon className="w-5 h-5 text-primary" />
             <span>{serverData.server}</span>
           </div>
 
-          {/* Player Count */}
           <div className="flex items-center space-x-2">
             <Users className="w-5 h-5 text-primary" />
             <span>
@@ -182,16 +178,7 @@ export default async function Server({
         </CardContent>
       </Card>
 
-      {/* Player History Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Player Activity</CardTitle>
-          <CardDescription>Last recorded player counts</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Chart data={serverHistory} />
-        </CardContent>
-      </Card>
+      <Chart data={serverHistory} />
     </div>
   );
 }

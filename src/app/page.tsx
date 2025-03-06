@@ -27,6 +27,19 @@ async function getServers(locale: string) {
     }
 }
 
+async function getLanguages(): Promise<string[]> {
+    const languages = await prisma.server.findMany({
+        distinct: ['localeCountry'],
+        select: {
+            localeCountry: true,
+        },
+    });
+
+    const formattedLanguages = languages.map((lang) => lang.localeCountry.toUpperCase());
+
+    return formattedLanguages;
+}
+
 export default async function Home({
     searchParams,
   }: Readonly<{
@@ -37,10 +50,12 @@ export default async function Home({
     locale = locale || 'de';
 
     const servers = await getServers(locale);
+    const languages: string[] = await getLanguages();
 
     return (
         <div>
-            <Header />
+            <Header languages={languages} />
+
             <div className="p-4">
                 {servers.length === 0 ? (
                     <p className="text-white">No servers available.</p>

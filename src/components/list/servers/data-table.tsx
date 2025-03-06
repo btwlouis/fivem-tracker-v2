@@ -100,6 +100,7 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
+                  className="hover:cursor-pointer"
                   onClick={() => redirectServer(row.original as Server)}
                   data-state={row.getIsSelected() && "selected"}>
 
