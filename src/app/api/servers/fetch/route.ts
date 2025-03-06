@@ -9,7 +9,6 @@ export async function GET(request: NextRequest) {
             status: 401,
         });
     }
-
     await getServers();
     
     return Response.json({ success: true });

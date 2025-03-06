@@ -1,14 +1,14 @@
-import prisma from '@/lib/prisma';
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-    const languages = await prisma.servers.findMany({
+    const languages = await prisma.server.findMany({
         distinct: ['localeCountry'],
         select: {
             localeCountry: true,
         },
     });
 
-    const formattedLanguages = languages.map((lang) => lang.localeCountry);
+    const formattedLanguages = languages.map((lang) => lang.localeCountry.toUpperCase());
 
     return Response.json(formattedLanguages);
 }

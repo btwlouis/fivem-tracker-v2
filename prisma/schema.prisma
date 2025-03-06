@@ -7,24 +7,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model server_history {
-  id        String   @db.VarChar(255)
-  clients   Int
-  timestamp DateTime @default(now()) @db.Timestamp(0)
-  server    servers  @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model ServerHistory {
+  id            Int       @id @default(autoincrement())
+  server_id  String   @db.VarChar(255) // Foreign key for servers.id
 
-  @@id([id, timestamp])
-  @@index([id], map: "id") // Index for serverId
+  clients    Int
+  timestamp  DateTime @default(now()) @db.Timestamp(0)
+
+  server     Server  @relation(fields: [server_id], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "FK_server_history_servers")
+
   @@index([timestamp], map: "timestamp")
 }
 
-model servers {
+model Server {
   id                 String           @id @db.VarChar(255)
   locale             String           @db.VarChar(255)
   localeCountry      String           @db.VarChar(255)
   hostname           String?          @db.Text
   joinId             String?          @db.VarChar(255)
-  projectName        String?          @db.VarChar(1024)
+  projectName        String?          @db.VarChar(255)
   projectDescription String           @db.LongText
   upvotePower        Int?
   burstPower         Int?
@@ -43,7 +44,7 @@ model servers {
   tags               String?          @db.LongText
   resources          String?          @db.LongText
   players            String?          @db.LongText
-  updated_at         DateTime         @default(now()) @db.Timestamp(0)
+  updated_at         DateTime         @updatedAt
   created_at         DateTime         @default(now()) @db.Timestamp(0)
-  server_history     server_history[]  // Relation to server_history
+  server_history     ServerHistory[]
 }

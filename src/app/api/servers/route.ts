@@ -1,4 +1,4 @@
-import prisma from '@/lib/prisma';
+import { prisma } from "@/lib/prisma";
 import { NextRequest } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const limit = 50;
   const offset = (pageNumber - 1) * limit;
 
-  const servers = await prisma.servers.findMany({
+  const servers = await prisma.server.findMany({
     take: limit,
     skip: offset,
     where: localeCountry ? { localeCountry } : {},

@@ -59,7 +59,7 @@ async function readBodyToServers(
   frameReader.read();
 
   await deferred.promise;
-  
+
   console.log(
     "Times: decode",
     decodeTime,
@@ -86,7 +86,7 @@ export async function fetchServers(
 
     await readBodyToServers(gameName, onServer, body);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Error fetching servers:", error);
     if (error instanceof fetcher.HttpError) {
@@ -99,11 +99,11 @@ export async function fetchServers(
   }
 }
 
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 function sanitizeString(input: string): string {
-  if (typeof input !== 'string') return input;
-  const sanitized = input.replace(/[^\x20-\x7E]/g, '').trim();
+  if (typeof input !== "string") return input;
+  const sanitized = input.replace(/[^\x20-\x7E]/g, "").trim();
   return sanitized.length > 255 ? sanitized.slice(0, 255) : sanitized;
 }
 
@@ -132,8 +132,34 @@ interface ServerData {
   server: string;
 }
 
+interface ServerData {
+  upvotePower: number;
+  burstPower: number;
+  private: boolean;
+  scriptHookAllowed: boolean;
+  playersMax: number;
+  playersCurrent: number;
+  iconVersion: number;
+
+  id: string;
+  locale: string;
+  localeCountry: string;
+  hostname: string;
+  joinId: string;
+  projectName: string;
+  projectDescription: string;
+  mapname: string;
+  gametype: string;
+  gamename: string;
+  enforceGameBuild: string;
+  bannerConnecting: string;
+  bannerDetail: string;
+  server: string;
+}
+
 export async function getServers() {
-  const perf = performance.now();
+  try {
+    const perf = performance.now();
   const servers: ServerData[] = [];
   const serverHistories = [];
   const timestamp = new Date();
@@ -168,7 +194,7 @@ export async function getServers() {
       servers.push(data);
 
       serverHistories.push({
-        id: server.id,
+        server_id: server.id,
         clients: server.playersCurrent ?? 0,
         timestamp: timestamp
       });
@@ -179,7 +205,7 @@ export async function getServers() {
 
   const ids = servers.map((server) => server.id);
 
-  const existingServers = await prisma.servers.findMany({
+  const existingServers = await prisma.server.findMany({
     where: { id: { in: ids } },
     select: { id: true }
   });
@@ -194,20 +220,20 @@ export async function getServers() {
   for (let i = 0; i < toCreate.length; i += batchSize) {
     const batch = toCreate.slice(i, i + batchSize);
 
-    await prisma.servers.createMany({
+    await prisma.server.createMany({
       data: batch,
       skipDuplicates: true
     });
 
     const relatedHistories = batch.map(server => {
       return {
-        id: server.id, 
+        server_id: server.id, 
         clients: server.playersCurrent ?? 0,
         timestamp: timestamp
       };
     });
 
-    await prisma.server_history.createMany({
+    await prisma.serverHistory.createMany({
       data: relatedHistories,
       skipDuplicates: true
     });
@@ -216,7 +242,7 @@ export async function getServers() {
   for (let i = 0; i < toUpdate.length; i += batchSize) {
     const batch = toUpdate.slice(i, i + batchSize);
     const updates = batch.map((server) => {
-      return prisma.servers.update({
+      return prisma.server.update({
         where: { id: server.id },
         data: server
       });
@@ -226,13 +252,13 @@ export async function getServers() {
 
     const updatedHistories = batch.map(server => {
       return {
-        id: server.id,
+        server_id: server.id,
         clients: server.playersCurrent ?? 0,
         timestamp: timestamp
       };
     });
 
-    await prisma.server_history.createMany({
+    await prisma.serverHistory.createMany({
       data: updatedHistories,
       skipDuplicates: true
     });
@@ -240,13 +266,23 @@ export async function getServers() {
 
   const time = performance.now() - perf;
   console.log(`Fetched and saved servers in ${time}ms`);
+  } catch(error) {
+      console.error('Failed to fetch servers:', error);
+  }
+
+  
 }
 
+
 export async function deleteOldServers() {
-  await prisma.server_history.deleteMany({
+  // delete history where older then 2 wekk
+  const twoWeeksAgo = new Date();
+  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+  await prisma.serverHistory.deleteMany({
     where: {
       timestamp: {
-        lt: new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000),
+        lt: twoWeeksAgo,
       },
     },
   });
