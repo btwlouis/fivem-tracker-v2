@@ -96,7 +96,7 @@ export default async function Server({
             alt="Server Banner"
             width={1865}
             height={108}
-            className="w-full h-36 object-cover"
+            className="w-full h-20 rounded-lg object-cover"
             unoptimized={true}
           />
         )}
