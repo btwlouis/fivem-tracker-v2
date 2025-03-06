@@ -1,4 +1,7 @@
 const nextConfig = {
+  experimental: {
+    useCache: true,
+  },
   images: {
     dangerouslyAllowSVG: true,
     remotePatterns: [

@@ -4,12 +4,18 @@ import { DataTable } from "@/components/list/servers/data-table";
 import { prisma } from "@/lib/prisma";
 
 async function getServers(locale: string) {
-    const limit = 100;
+    'use cache';
+
+    const perf = performance.now();
 
     try {
         const allServers = await prisma.server.findMany({
-            take: limit,
-            where: locale ? { localeCountry: locale } : {},
+            where: {
+                localeCountry: locale,
+                playersCurrent: {
+                    gt: 0,
+                },
+            },
             orderBy: {
                 playersCurrent: 'desc',
             },
@@ -19,7 +25,9 @@ async function getServers(locale: string) {
             ...server,
             rank: index + 1,
         }));
- 
+        
+        console.log("Fetched (" + servers.length + ") servers in", performance.now() - perf, "ms");
+
         return servers;
     } catch (error) {
         console.error("Failed to fetch servers:", error);
