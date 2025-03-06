@@ -75,7 +75,7 @@ const convertToChartData = (
             }),
       clients: item.clients,
     };
-  });
+  }).reverse();
 };
 
 export function Chart({ data }: { data: ServerHistory[] }) {
