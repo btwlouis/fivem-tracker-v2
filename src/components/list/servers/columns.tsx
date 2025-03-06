@@ -3,8 +3,6 @@
 import type { Server } from "@prisma/client";
 import { ColumnDef } from "@tanstack/react-table";
 import Image from "next/image";
-import { Flag } from "@next-languages/flags";
-import { Suspense } from "react";
 import { ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { colorMap } from "@/lib/utils";
@@ -17,8 +15,8 @@ export const columns: ColumnDef<Server>[] = [
       return (
         <Image
           src={`https://servers-frontend.fivem.net/api/servers/icon/${data.row.original.id}/${data.row.original.iconVersion}.png`}
-          width={29}
-          height={29}
+          width={32}
+          height={32}
           alt="server icon"
         />
       );
@@ -28,8 +26,6 @@ export const columns: ColumnDef<Server>[] = [
     accessorKey: "projectName",
     header: "Project Name",
     cell: (data) => {
-      
-  
       const formattedProjectName = data?.row?.original?.projectName?.replace(
         /\^(\d)/g,
         (_, code: string) => `<span style='color: ${colorMap[`^${code}`] || "inherit"}'>`
@@ -48,17 +44,15 @@ export const columns: ColumnDef<Server>[] = [
   {
     accessorKey: "localeCountry",
     header: "Country",
-    cell: (data) => {
-      const localeCountry = data.row.original.localeCountry;
+    cell: ({ row }) => {
+      const localeCountry = row.original.localeCountry || "us";
+
       return (
-        <div>
-          {localeCountry}
+        <>
+          {/* <Flag code={localeCountry} /> */}
 
-          <Suspense fallback={<>...</>}>
-            <Flag countryCode={localeCountry} className="w-6 h-6" />
-          </Suspense>
-        </div>
-
+          <span className="ml-2">{localeCountry}</span>
+        </>
       );
     },
   },

@@ -1,5 +1,5 @@
 "use client";
-import * as React from "react"
+import * as React from "react";
 
 import {
   ColumnDef,
@@ -22,7 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import { Server } from "@prisma/client";
 
 interface DataTableProps<TData, TValue> {
@@ -37,7 +37,7 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
-  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [sorting, setSorting] = React.useState<SortingState>([]);
 
   const table = useReactTable({
     data,
@@ -46,28 +46,31 @@ export function DataTable<TData, TValue>({
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
-    getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     state: {
       sorting,
       columnFilters,
+    },
+    initialState: {
       pagination: {
         pageSize: 50,
-        pageIndex: 0,
       },
-    }
+    },
   });
 
   const redirectServer = (server: Server) => {
     window.location.href = `/server/${server.id}`;
-  }
+  };
 
   return (
     <div>
       <div className="flex items-center py-4">
         <Input
           placeholder="Search servers..."
-          value={(table.getColumn("projectName")?.getFilterValue() as string) ?? ""}
+          value={
+            (table.getColumn("projectName")?.getFilterValue() as string) ?? ""
+          }
           onChange={(event) =>
             table.getColumn("projectName")?.setFilterValue(event.target.value)
           }
@@ -103,7 +106,6 @@ export function DataTable<TData, TValue>({
                   className="hover:cursor-pointer"
                   onClick={() => redirectServer(row.original as Server)}
                   data-state={row.getIsSelected() && "selected"}>
-
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(
@@ -126,21 +128,20 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
+
       <div className="flex items-center justify-end space-x-2 py-4">
         <Button
           variant="outline"
           size="sm"
           onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
+          disabled={!table.getCanPreviousPage()}>
           Previous
         </Button>
         <Button
           variant="outline"
           size="sm"
           onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
+          disabled={!table.getCanNextPage()}>
           Next
         </Button>
       </div>

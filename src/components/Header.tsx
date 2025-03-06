@@ -20,7 +20,7 @@ export default function Header({ languages }: HeaderProps) {
   };
 
   return (
-    <header className="bg-background text-foreground p-4 shadow-md flex flex-col sm:flex-row items-center justify-between">
+    <header className="bg-background text-foreground py-4 shadow-md flex flex-col sm:flex-row items-center justify-between">
       <div className="text-center sm:text-left">
         <h1 className="text-2xl font-bold">FiveM Tracker</h1>
         <p className="text-muted-foreground">Unlock the power of FiveM</p>

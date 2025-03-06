@@ -53,10 +53,10 @@ export default async function Home({
     const languages: string[] = await getLanguages();
 
     return (
-        <div>
+        <div className="container">
             <Header languages={languages} />
 
-            <div className="p-4">
+            <div>
                 {servers.length === 0 ? (
                     <p className="text-white">No servers available.</p>
                 ) : (
