@@ -21,8 +21,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 const chartConfig = {
-  desktop: {
-    label: "Desktop",
+  clients: {
+    label: "Players",
     color: "hsl(var(--chart-1))",
   },
 } satisfies ChartConfig;
@@ -56,26 +56,48 @@ const convertToChartData = (
     }
   });
 
-  return filteredData.map((item) => {
-    const dateObj = new Date(item.timestamp);
+  return filteredData
+    .map((item) => {
+      const dateObj = new Date(item.timestamp);
+      let formattedTimestamp = dateObj.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
-    return {
-      timestamp: dateObj.toISOString(), // Preserve full date for XAxis
-      formattedTime:
-        range === "1h" || range === "1d"
-          ? dateObj.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : dateObj.toLocaleDateString([], { month: "short", day: "2-digit" }) +
-            " " +
-            dateObj.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-      clients: item.clients,
-    };
-  }).reverse();
+      switch(range) {
+        case "1h":
+          formattedTimestamp = dateObj.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+          break;
+        case "1d":
+          formattedTimestamp = dateObj.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+          break;
+        case "7d":
+          formattedTimestamp = dateObj.toLocaleDateString([], {
+            hour: "2-digit",
+            month: "short",
+            day: "2-digit",
+          });
+          break;
+        case "1m":
+          formattedTimestamp = dateObj.toLocaleDateString([], {
+            month: "short",
+            day: "2-digit",
+          });
+          break;
+      }
+
+      return {
+        timestamp: formattedTimestamp,
+        clients: item.clients,
+      };
+    })
+    .reverse();
 };
 
 export function Chart({ data }: { data: ServerHistory[] }) {
@@ -87,6 +109,7 @@ export function Chart({ data }: { data: ServerHistory[] }) {
   const handleTimeRangeChange = (newRange: string) => {
     const range = newRange as TimeRanges["timeRanges"][number];
     setRange(range);
+    console.log(convertToChartData(data, range))
     setChartData(convertToChartData(data, range));
   };
 
@@ -132,14 +155,11 @@ export function Chart({ data }: { data: ServerHistory[] }) {
                 })
               }
             />
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent hideLabel />}
-            />
+            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
             <Line
               dataKey="clients"
               type="natural"
-              stroke="var(--color-desktop)"
+              stroke="var(--color-clients)"
               strokeWidth={2}
               dot={false}
             />
