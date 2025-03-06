@@ -160,110 +160,112 @@ interface ServerData {
 export async function getServers() {
   try {
     const perf = performance.now();
-  const servers: ServerData[] = [];
-  const timestamp = new Date();
+    const servers: ServerData[] = [];
+    const timestamp = new Date();
 
-  await fetchServers(GameName.FiveM, async (server) => {
-    try {
-      const data = {
-        upvotePower: server.upvotePower ?? 0,
-        burstPower: server.burstPower ?? 0,
-        private: server.private ?? false,
-        scriptHookAllowed: server.scriptHookAllowed ?? false,
-        playersMax: server.playersMax ?? 0,
-        playersCurrent: server.playersCurrent ?? 0,
-        iconVersion: server.iconVersion ?? 0,
+    await fetchServers(GameName.FiveM, async (server) => {
+      try {
+        const data = {
+          upvotePower: server.upvotePower ?? 0,
+          burstPower: server.burstPower ?? 0,
+          private: server.private ?? false,
+          scriptHookAllowed: server.scriptHookAllowed ?? false,
+          playersMax: server.playersMax ?? 0,
+          playersCurrent: server.playersCurrent ?? 0,
+          iconVersion: server.iconVersion ?? 0,
 
-        id: sanitizeString(server.id),
-        locale: sanitizeString(server.locale),
-        localeCountry: sanitizeString(server.localeCountry),
-        hostname: sanitizeString(server.hostname),
-        joinId: sanitizeString(server.joinId ?? ""),
-        projectName: sanitizeString(server.projectName),
-        projectDescription: sanitizeString(server.projectDescription ?? ""),
-        mapname: sanitizeString(server.mapname ?? ""),
-        gametype: sanitizeString(server.gametype ?? ""),
-        gamename: sanitizeString(server.gamename ?? ""),
-        enforceGameBuild: sanitizeString(server.enforceGameBuild ?? ""),
-        bannerConnecting: sanitizeString(server.bannerConnecting ?? ""),
-        bannerDetail: sanitizeString(server.bannerDetail ?? ""),
-        server: sanitizeString(server.server ?? ""),
-      };
+          id: sanitizeString(server.id),
+          locale: sanitizeString(server.locale),
+          localeCountry: sanitizeString(server.localeCountry),
+          hostname: sanitizeString(server.hostname),
+          joinId: sanitizeString(server.joinId ?? ""),
+          projectName: sanitizeString(server.projectName),
+          projectDescription: sanitizeString(server.projectDescription ?? ""),
+          mapname: sanitizeString(server.mapname ?? ""),
+          gametype: sanitizeString(server.gametype ?? ""),
+          gamename: sanitizeString(server.gamename ?? ""),
+          enforceGameBuild: sanitizeString(server.enforceGameBuild ?? ""),
+          bannerConnecting: sanitizeString(server.bannerConnecting ?? ""),
+          bannerDetail: sanitizeString(server.bannerDetail ?? ""),
+          server: sanitizeString(server.server ?? ""),
+        };
 
-      servers.push(data);
-    } catch (error) {
-      console.error(`Error processing server ${server.id}:`, error);
+        servers.push(data);
+      } catch (error) {
+        console.error(`Error processing server ${server.id}:`, error);
+      }
+    });
+
+    const ids = servers.map((server) => server.id);
+
+    const existingServers = await prisma.server.findMany({
+      where: { id: { in: ids } },
+      select: { id: true },
+    });
+
+    const existingIds = new Set(existingServers.map((s) => s.id));
+
+    const toUpdate = servers.filter((server) => existingIds.has(server.id));
+    const toCreate = servers.filter((server) => !existingIds.has(server.id));
+
+    const batchSize = 5000;
+
+    const createPromises = [];
+    const historyPromises = [];
+    const updatePromises = [];
+
+    for (let i = 0; i < toCreate.length; i += batchSize) {
+      const batch = toCreate.slice(i, i + batchSize);
+
+      createPromises.push(prisma.server.createMany({
+        data: batch,
+        skipDuplicates: true
+      }));
+
+      historyPromises.push(prisma.serverHistory.createMany({
+        data: batch.map(server => ({
+          server_id: server.id,
+          clients: server.playersCurrent ?? 0,
+          timestamp
+        })),
+        skipDuplicates: true
+      }));
     }
-  });
 
-  const ids = servers.map((server) => server.id);
+    await Promise.allSettled(createPromises);
 
-  const existingServers = await prisma.server.findMany({
-    where: { id: { in: ids } },
-    select: { id: true }
-  });
+    for (let i = 0; i < toUpdate.length; i += batchSize) {
+      const batch = toUpdate.slice(i, i + batchSize);
 
-  const existingIds = new Set(existingServers.map(s => s.id));
+      updatePromises.push(
+        prisma.$transaction(
+          batch.map((server) => prisma.server.update({
+            where: { id: server.id },
+            data: server
+          }))
+        )
+      );
+    
+      updatePromises.push(
+        prisma.serverHistory.createMany({
+          data: batch.map(server => ({
+            server_id: server.id,
+            clients: server.playersCurrent ?? 0,
+            timestamp
+          })),
+          skipDuplicates: true
+        })
+      );
+    }
 
-  const toUpdate = servers.filter(server => existingIds.has(server.id));
-  const toCreate = servers.filter(server => !existingIds.has(server.id));
+    await Promise.allSettled(updatePromises);
 
-  const batchSize = 5000;
-
-  for (let i = 0; i < toCreate.length; i += batchSize) {
-    const batch = toCreate.slice(i, i + batchSize);
-
-    await prisma.server.createMany({
-      data: batch,
-      skipDuplicates: true
-    });
-
-    const relatedHistories = batch.map(server => {
-      return {
-        server_id: server.id, 
-        clients: server.playersCurrent ?? 0,
-        timestamp: timestamp
-      };
-    });
-
-    await prisma.serverHistory.createMany({
-      data: relatedHistories,
-      skipDuplicates: true
-    });
-  }
-
-  for (let i = 0; i < toUpdate.length; i += batchSize) {
-    const batch = toUpdate.slice(i, i + batchSize);
-    const updates = batch.map((server) => {
-      return prisma.server.update({
-        where: { id: server.id },
-        data: server
-      });
-    });
-
-    await prisma.$transaction(updates);
-
-    const updatedHistories = batch.map(server => {
-      return {
-        server_id: server.id,
-        clients: server.playersCurrent ?? 0,
-        timestamp: timestamp
-      };
-    });
-
-    await prisma.serverHistory.createMany({
-      data: updatedHistories,
-      skipDuplicates: true
-    });
-  }
-
-  const time = performance.now() - perf;
-  console.log(`Fetched and saved servers in ${time}ms`);
-  } catch(error) {
-      console.error('Failed to fetch servers:', error);
+    const time = performance.now() - perf;
+    console.log(`Fetched and saved servers in ${time}ms`);
+  } catch (error) {
+    console.error("Failed to fetch servers:", error);
   }
 }
-
 
 export async function deleteOldServers() {
   // delete history where older then 2 wekk
