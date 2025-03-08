@@ -196,6 +196,8 @@ export async function getServers() {
       }
     });
 
+    servers.sort((a, b) => b.playersCurrent - a.playersCurrent).slice(0, 10000);
+
     const ids = servers.map((server) => server.id);
 
     const existingServers = await prisma.server.findMany({
