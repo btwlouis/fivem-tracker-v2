@@ -134,7 +134,7 @@ export function Chart({ data }: { data: ServerHistory[] }) {
       </CardFooter>
 
       <CardContent>
-        <ChartContainer config={chartConfig}>
+        <ChartContainer config={chartConfig} className="max-h-[300px] w-full" >
           <LineChart
             accessibilityLayer
             data={chartData}
@@ -148,12 +148,6 @@ export function Chart({ data }: { data: ServerHistory[] }) {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tickFormatter={(value) =>
-                new Date(value).toLocaleDateString("default", {
-                  month: "short",
-                  day: "2-digit",
-                })
-              }
             />
             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
             <Line
