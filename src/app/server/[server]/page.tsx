@@ -38,9 +38,10 @@ export async function generateMetadata({
 
   const serverResult = await getServer(server);
 
+  // remove out ^1,^2-^9 inside projectName and projectDescription
   return {
-    title: serverResult?.serverData?.projectName,
-    description: serverResult?.serverData?.projectDescription,
+    title: serverResult?.serverData?.projectName?.replace(/\^(\d)/g, '') || "Server",
+    description: serverResult?.serverData?.projectDescription.replace(/\^(\d)/g, '') || "Server",
     openGraph: {
       countryName: serverResult?.serverData?.localeCountry,
       locale: serverResult?.serverData?.locale,
