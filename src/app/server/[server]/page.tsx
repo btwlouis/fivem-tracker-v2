@@ -102,13 +102,15 @@ export default async function Server({
         )}
 
         <CardHeader className="flex flex-row items-center space-x-4">
-          {serverData.iconVersion && serverData.id && (
+          {(serverData.iconVersion && serverData.id) ? (
             <Image
               src={`https://servers-frontend.fivem.net/api/servers/icon/${serverData.id}/${serverData.iconVersion}.png`}
               width={48}
               height={48}
-              alt="server icon"
+              alt="Server Icon"
             />
+          ) : (
+            <div className="w-12 h-12  bg-gradient-to-br from-blue-500 to-purple-500" />
           )}
           <div>
             <CardTitle>

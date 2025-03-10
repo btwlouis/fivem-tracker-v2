@@ -25,7 +25,11 @@ export const columns: ColumnDef<Server>[] = [
             src={`https://servers-frontend.fivem.net/api/servers/icon/${row.original.id}/${row.original.iconVersion}.png`}
             width={32}
             height={32}
-            alt="server icon p-0"
+            alt="Server Icon"
+            onError={(e) => {
+              e.currentTarget.src = "";
+              e.currentTarget.classList.add("bg-gradient-to-br", "from-blue-500", "to-purple-500");
+            }}
           />
           <div
             className="truncate"
