@@ -26,6 +26,28 @@ import Image from "next/image";
 import { colorMap } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { Server, ServerHistory } from "@prisma/client";
+import { Metadata } from "next";
+
+export async function generateMetadata({
+  params,
+}: Readonly<{
+  params: Promise<{ server: string }>;
+}>): Promise<Metadata> {
+
+  const { server } = await params;
+
+  const serverResult = await getServer(server);
+
+  return {
+    title: serverResult?.serverData?.projectName,
+    description: serverResult?.serverData?.projectDescription,
+    openGraph: {
+      countryName: serverResult?.serverData?.localeCountry,
+      locale: serverResult?.serverData?.locale,
+      type: "website",
+    },
+  }
+}
 
 async function getServer(serverId: string) {
   try {
