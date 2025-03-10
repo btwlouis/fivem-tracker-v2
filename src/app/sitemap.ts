@@ -11,7 +11,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         orderBy: {
             playersCurrent: "desc",
         },
-        take: 100,
+        take: 5000,
     });
 
     const serverEntries: MetadataRoute.Sitemap = servers.map((server) => ({
