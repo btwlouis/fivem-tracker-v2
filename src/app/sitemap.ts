@@ -8,6 +8,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             projectName: true,
             updated_at: true,
         },
+        orderBy: {
+            playersCurrent: "desc",
+        },
+        take: 100,
     });
 
     const serverEntries: MetadataRoute.Sitemap = servers.map((server) => ({
