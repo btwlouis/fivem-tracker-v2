@@ -6,6 +6,24 @@ import Image from "next/image";
 import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { colorMap } from "@/lib/utils";
+import React, { useState } from 'react';
+
+const ServerIcon: React.FC<{ id: string; iconVersion: string }> = ({ id, iconVersion }) => {
+  const [imgSrc, setImgSrc] = useState(`https://servers-frontend.fivem.net/api/servers/icon/${id}/${iconVersion}.png`);
+
+  return (
+    <Image
+      src={imgSrc}
+      onError={() => {
+        setImgSrc("/images/placeholder.jpeg");
+      }}
+      width={32}
+      height={32}
+      className="object-contain"
+      alt="Server Icon"
+    />
+  );
+};
 
 export const columns: ColumnDef<Server>[] = [
   {
@@ -18,19 +36,10 @@ export const columns: ColumnDef<Server>[] = [
           (_, code: string) =>
             `<span style='color: ${colorMap[`^${code}`] || "inherit"}'>`
         ) + "</span>";
-
+      
       return (
         <div className="flex items-center space-x-2">
-          <Image
-            src={`https://servers-frontend.fivem.net/api/servers/icon/${row.original.id}/${row.original.iconVersion}.png`}
-            width={32}
-            height={32}
-            alt="Server Icon"
-            onError={(e) => {
-              e.currentTarget.src = "";
-              e.currentTarget.classList.add("bg-gradient-to-br", "from-blue-500", "to-purple-500");
-            }}
-          />
+          <ServerIcon id={row.original.id} iconVersion={row.original.iconVersion?.toString() || "default"} />
           <div
             className="truncate"
             dangerouslySetInnerHTML={{ __html: formattedProjectName }}
