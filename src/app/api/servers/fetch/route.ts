@@ -1,4 +1,4 @@
-import { getServers } from '@/services/fivem.service';
+import { deleteOldServers, getServers } from '@/services/fivem.service';
 import type { NextRequest } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
         });
     }
     await getServers();
+    await deleteOldServers();
     
     return Response.json({ success: true });
 }
