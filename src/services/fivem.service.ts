@@ -281,4 +281,33 @@ export async function deleteOldServers() {
       },
     },
   });
+
+  // delete servers where serverHistory is older then 3 days
+  const threeDaysAgo = new Date();
+  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+  const serversToDelete = await prisma.server.findMany({
+    where: {
+      server_history: {
+        none: {
+          timestamp: {
+            gte: threeDaysAgo,
+          },
+        },
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+  const idsToDelete = serversToDelete.map((server) => server.id);
+  if (idsToDelete.length > 0) {
+    await prisma.server.deleteMany({
+      where: {
+        id: {
+          in: idsToDelete,
+        },
+      },
+    });
+  }
+  console.log(`Deleted ${idsToDelete.length} old servers`);
 }
