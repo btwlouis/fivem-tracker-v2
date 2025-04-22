@@ -270,14 +270,14 @@ export async function getServers() {
 }
 
 export async function deleteOldServers() {
-  // delete history where older then 2 wekk
-  const twoWeeksAgo = new Date();
-  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+  // delete history where older then 1 week
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
   await prisma.serverHistory.deleteMany({
     where: {
       timestamp: {
-        lt: twoWeeksAgo,
+        lt: oneWeekAgo,
       },
     },
   });
