@@ -7,7 +7,6 @@ import {
   ColumnFiltersState,
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel,
   getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
@@ -28,15 +27,19 @@ import { Server } from "@prisma/client";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  totalCount: number;
+  currentPage: number;
+  totalPages: number;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  totalCount,
+  currentPage,
+  totalPages,
 }: DataTableProps<TData, TValue>) {
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
   const table = useReactTable({
@@ -46,21 +49,23 @@ export function DataTable<TData, TValue>({
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     state: {
       sorting,
       columnFilters,
     },
-    initialState: {
-      pagination: {
-        pageSize: 50,
-      },
-    },
+    manualPagination: true,
+    pageCount: totalPages,
   });
 
   const redirectServer = (server: Server) => {
     window.location.href = `/server/${server.id}`;
+  };
+
+  const handlePageChange = (newPage: number) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('page', newPage.toString());
+    window.location.href = url.toString();
   };
 
   return (
@@ -68,9 +73,7 @@ export function DataTable<TData, TValue>({
       <div className="flex items-center py-4">
         <Input
           placeholder="Search servers..."
-          value={
-            (table.getColumn("projectName")?.getFilterValue() as string) ?? ""
-          }
+          value={(table.getColumn("projectName")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("projectName")?.setFilterValue(event.target.value)
           }
@@ -129,21 +132,26 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
 
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}>
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}>
-          Next
-        </Button>
+      <div className="flex items-center justify-between space-x-2 py-4">
+        <div className="text-sm text-muted-foreground">
+          Showing {data.length} of {totalCount} results
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage <= 1}>
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage >= totalPages}>
+            Next
+          </Button>
+        </div>
       </div>
     </div>
   );

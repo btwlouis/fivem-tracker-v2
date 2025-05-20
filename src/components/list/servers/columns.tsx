@@ -6,17 +6,33 @@ import Image from "next/image";
 import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { colorMap } from "@/lib/utils";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const ServerIcon: React.FC<{ id: string; iconVersion: string }> = ({ id, iconVersion }) => {
-  const [imgSrc, setImgSrc] = useState(`https://servers-frontend.fivem.net/api/servers/icon/${id}/${iconVersion}.png`);
+type ServerListItem = {
+  id: string;
+  projectName: string | null;
+  playersCurrent: number | null;
+  playersMax: number | null;
+  localeCountry: string;
+  iconVersion: number | null;
+  rank: number;
+  projectDescription: string | null;
+};
+
+const ServerIcon: React.FC<{ id: string; iconVersion: string | number | null }> = ({ id, iconVersion }) => {
+  const [imgSrc, setImgSrc] = useState(`/server-icons/${id}_${iconVersion || 'default'}.png`);
+
+  useEffect(() => {
+    const img = new window.Image();
+    img.onerror = () => {
+      setImgSrc("/images/placeholder.jpeg");
+    };
+    img.src = imgSrc;
+  }, [imgSrc]);
 
   return (
     <Image
       src={imgSrc}
-      onError={() => {
-        setImgSrc("/images/placeholder.jpeg");
-      }}
       width={32}
       height={32}
       className="object-contain"
@@ -25,7 +41,7 @@ const ServerIcon: React.FC<{ id: string; iconVersion: string }> = ({ id, iconVer
   );
 };
 
-export const columns: ColumnDef<Server>[] = [
+export const columns: ColumnDef<ServerListItem>[] = [
   {
     accessorKey: "projectName",
     header: "Project Name",
@@ -39,7 +55,7 @@ export const columns: ColumnDef<Server>[] = [
       
       return (
         <div className="flex items-center space-x-2">
-          <ServerIcon id={row.original.id} iconVersion={row.original.iconVersion?.toString() || "default"} />
+          <ServerIcon id={row.original.id} iconVersion={row.original.iconVersion} />
           <div
             className="truncate"
             dangerouslySetInnerHTML={{ __html: formattedProjectName }}
