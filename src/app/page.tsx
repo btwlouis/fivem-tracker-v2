@@ -91,9 +91,9 @@ export default async function Home({
   }: Readonly<{
     searchParams: Promise<{ locale: string; page?: string }>;
   }>) {
-    let { locale, page } = await searchParams;
+    const { locale: rawLocale, page } = await searchParams;
     const currentPage = page ? parseInt(page) : 1;
-    locale = locale || 'de';
+    const locale = rawLocale || 'de';
 
     const { servers, totalCount, totalPages } = await getServers(locale, currentPage);
     const languages: string[] = await getLanguages();

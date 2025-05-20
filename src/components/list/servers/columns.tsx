@@ -1,6 +1,5 @@
 "use client";
 
-import type { Server } from "@prisma/client";
 import { ColumnDef } from "@tanstack/react-table";
 import Image from "next/image";
 import { ArrowUpDown } from "lucide-react";
