@@ -1,7 +1,7 @@
 import path from 'path';
 import { promises as fsPromises } from 'fs';
 
-const ICONS_DIR = path.join(process.cwd(), 'public', 'server-icons');
+const ICONS_DIR = path.join(process.cwd(), 'icons');
 
 export class IconService {
     private static instance: IconService;
@@ -29,21 +29,18 @@ export class IconService {
     public async getIconPath(serverId: string, iconVersion: string | number | null): Promise<string> {
         const iconFileName = `${serverId}_${iconVersion || 'default'}.png`;
         const localPath = path.join(ICONS_DIR, iconFileName);
-        const publicPath = `/server-icons/${iconFileName}`;
+        const publicPath = `/api/icon/${iconFileName}`;
         const placeHolder = '/images/placeholder.jpeg'
 
-        // Wenn das Icon bereits im Cache ist, geben wir den Pfad zurück
         if (this.iconCache.has(serverId)) {
             return this.iconCache.get(serverId)!;
         }
 
         try {
-            // Prüfen, ob das Icon bereits lokal existiert
             await fsPromises.access(localPath);
             this.iconCache.set(serverId, publicPath);
             return publicPath;
         } catch {
-            // Icon existiert nicht lokal, wir laden es herunter
             try {
                 const response = await fetch(
                     `https://servers-frontend.fivem.net/api/servers/icon/${serverId}/${iconVersion || 'default'}.png`
