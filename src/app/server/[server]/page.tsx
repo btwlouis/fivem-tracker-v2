@@ -110,7 +110,8 @@ export default async function Server({
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <Link
+      <Link 
+        prefetch={false} 
         href="/"
         className="flex items-center text-sm text-muted-foreground hover:underline"
       >
