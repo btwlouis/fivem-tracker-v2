@@ -130,6 +130,7 @@ export default async function Server({
               src={`https://servers-frontend.fivem.net/api/servers/icon/${serverData.id}/${serverData.iconVersion}.png`}
               width={48}
               height={48}
+              loading="lazy"
               alt="Server Icon"
             />
           ) : (

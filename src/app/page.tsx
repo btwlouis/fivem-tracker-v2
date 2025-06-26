@@ -2,7 +2,6 @@ import Header from "@/components/Header";
 import { columns } from "@/components/list/servers/columns";
 import { DataTable } from "@/components/list/servers/data-table";
 import { prisma } from "@/lib/prisma";
-import { IconService } from "@/services/icon-service";
 
 async function getServers(locale: string, page: number = 1, pageSize: number = 50) {
     'use cache';
@@ -46,9 +45,6 @@ async function getServers(locale: string, page: number = 1, pageSize: number = 5
         ]);
 
         // Icons vorladen
-        const iconService = IconService.getInstance();
-        await iconService.preloadIcons(servers);
-
         const serversWithRank = servers.map((server, index) => ({
             ...server,
             rank: skip + index + 1,
