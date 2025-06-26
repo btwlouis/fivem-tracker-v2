@@ -28,43 +28,52 @@ import { Button } from "@/components/ui/button";
 import type { Server, ServerHistory } from "@prisma/client";
 import { Metadata } from "next";
 
+// Revalidate every 60 seconds (ISR)
+export const revalidate = 60;
+
+// Static paths for all server pages
+export async function generateStaticParams() {
+  const servers = await prisma.server.findMany({
+    select: { id: true },
+    take: 1000,
+    orderBy: { playersCurrent: "desc" },
+  });
+
+  // console log the first 10 ids
+  return servers.map((s) => ({ server: s.id }));
+}
+
+// Metadata for SEO
 export async function generateMetadata({
   params,
-}: Readonly<{
+}: {
   params: Promise<{ server: string }>;
-}>): Promise<Metadata> {
-
+}): Promise<Metadata> {
   const { server } = await params;
-
   const serverResult = await getServer(server);
 
-  // remove out ^1,^2-^9 inside projectName and projectDescription
   return {
-    title: serverResult?.serverData?.projectName?.replace(/\^(\d)/g, '') || "Server",
-    description: serverResult?.serverData?.projectDescription.replace(/\^(\d)/g, '') || "Server",
+    title: serverResult?.serverData?.projectName?.replace(/\^(\d)/g, "") || "Server",
+    description:
+      serverResult?.serverData?.projectDescription?.replace(/\^(\d)/g, "") ||
+      "Server",
     openGraph: {
       countryName: serverResult?.serverData?.localeCountry,
       locale: serverResult?.serverData?.locale,
       type: "website",
     },
-  }
+  };
 }
 
 async function getServer(serverId: string) {
   try {
     const serverData = (await prisma.server.findUnique({
-      where: {
-        id: serverId,
-      },
+      where: { id: serverId },
     })) as Server;
 
     const serverHistory = (await prisma.serverHistory.findMany({
-      where: {
-        server_id: serverId,
-      },
-      orderBy: {
-        timestamp: "desc",
-      },
+      where: { server_id: serverId },
+      orderBy: { timestamp: "desc" },
     })) as ServerHistory[];
 
     return {
@@ -77,24 +86,20 @@ async function getServer(serverId: string) {
   }
 }
 
+// Static Page Component
 export default async function Server({
   params,
-}: Readonly<{
+}: {
   params: Promise<{ server: string }>;
-}>) {
+}) {
   const { server } = await params;
-
   const serverResult = await getServer(server);
 
-  if (!serverResult) {
+  if (!serverResult?.serverData) {
     return notFound();
   }
 
   const { serverData, serverHistory } = serverResult;
-
-  if (!serverData) {
-    return notFound();
-  }
 
   const formattedProjectName =
     serverData.projectName?.replace(
@@ -107,7 +112,8 @@ export default async function Server({
     <div className="container mx-auto p-6 space-y-6">
       <Link
         href="/"
-        className="flex items-center text-sm text-muted-foreground hover:underline">
+        className="flex items-center text-sm text-muted-foreground hover:underline"
+      >
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back
       </Link>
@@ -120,12 +126,12 @@ export default async function Server({
             width={1865}
             height={108}
             className="w-full h-20 rounded-lg object-cover"
-            unoptimized={true}
+            unoptimized
           />
         )}
 
         <CardHeader className="flex flex-row items-center space-x-4">
-          {(serverData.iconVersion && serverData.id) ? (
+          {serverData.iconVersion && serverData.id ? (
             <Image
               src={`https://servers-frontend.fivem.net/api/servers/icon/${serverData.id}/${serverData.iconVersion}.png`}
               width={48}
@@ -134,7 +140,7 @@ export default async function Server({
               alt="Server Icon"
             />
           ) : (
-            <div className="w-12 h-12  bg-gradient-to-br from-blue-500 to-purple-500" />
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500" />
           )}
           <div>
             <CardTitle>
