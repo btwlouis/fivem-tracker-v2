@@ -196,6 +196,7 @@ export async function getServers() {
       }
     });
 
+    console.log(`Fetched ${servers.length} servers`);
     servers.sort((a, b) => b.playersCurrent - a.playersCurrent).slice(0, 10000);
 
     const ids = servers.map((server) => server.id);
@@ -212,55 +213,60 @@ export async function getServers() {
 
     const batchSize = 5000;
 
-    const createPromises = [];
-    const historyPromises = [];
-    const updatePromises = [];
+    const createBatches = [];
+    const updateBatches = [];
+    const historyBatches = [];
+
 
     for (let i = 0; i < toCreate.length; i += batchSize) {
       const batch = toCreate.slice(i, i + batchSize);
 
-      createPromises.push(prisma.server.createMany({
-        data: batch,
-        skipDuplicates: true
-      }));
-
-      historyPromises.push(prisma.serverHistory.createMany({
-        data: batch.map(server => ({
-          server_id: server.id,
-          clients: server.playersCurrent ?? 0,
-          timestamp
-        })),
-        skipDuplicates: true
-      }));
-    }
-
-    await Promise.allSettled(createPromises);
-
-    for (let i = 0; i < toUpdate.length; i += batchSize) {
-      const batch = toUpdate.slice(i, i + batchSize);
-
-      updatePromises.push(
-        prisma.$transaction(
-          batch.map((server) => prisma.server.update({
-            where: { id: server.id },
-            data: server
-          }))
-        )
+      createBatches.push(
+        prisma.server.createMany({ data: batch, skipDuplicates: true })
       );
-    
-      updatePromises.push(
+
+      historyBatches.push(
         prisma.serverHistory.createMany({
-          data: batch.map(server => ({
+          data: batch.map((server) => ({
             server_id: server.id,
             clients: server.playersCurrent ?? 0,
-            timestamp
+            timestamp,
           })),
-          skipDuplicates: true
+          skipDuplicates: true,
         })
       );
     }
 
-    await Promise.allSettled(updatePromises);
+    for (let i = 0; i < toUpdate.length; i += batchSize) {
+      const batch = toUpdate.slice(i, i + batchSize);
+
+      // Avoid prisma.$transaction([...]) for better parallelization
+      updateBatches.push(
+        ...batch.map((server) =>
+          prisma.server.update({
+            where: { id: server.id },
+            data: server,
+          })
+        )
+      );
+
+      historyBatches.push(
+        prisma.serverHistory.createMany({
+          data: batch.map((server) => ({
+            server_id: server.id,
+            clients: server.playersCurrent ?? 0,
+            timestamp,
+          })),
+          skipDuplicates: true,
+        })
+      );
+    }
+    console.log(
+      `To create: ${toCreate.length}, to update: ${toUpdate.length}`
+    );
+    await Promise.allSettled(createBatches);
+    await Promise.allSettled(updateBatches);
+    await Promise.allSettled(historyBatches);
 
     const time = performance.now() - perf;
     console.log(`Fetched and saved servers in ${time}ms`);
