@@ -17,11 +17,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const domain = process.env.PLAUSIBLE_DOMAIN || "";
-
+  const host = process.env.PLAUSIBLE_HOST || "";
 
   return (
     <>
-      <PlausibleProvider domain={domain}>
+      <PlausibleProvider domain={domain} customDomain={host}>
         <html lang="en" suppressHydrationWarning>
           <body className={`${inter.className} antialiased `}>
             <ThemeProvider
