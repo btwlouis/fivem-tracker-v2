@@ -17,7 +17,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import type { ServerHistory } from "@prisma/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 const chartConfig = {
@@ -100,17 +100,34 @@ const convertToChartData = (
     .reverse();
 };
 
-export function Chart({ data }: { data: ServerHistory[] }) {
-  const [range, setRange] = useState<TimeRanges["timeRanges"][number]>(
-    timeRanges[0]
-  );
-  const [chartData, setChartData] = useState(convertToChartData(data, range));
+interface ChartDataPoint {
+  timestamp: string;
+  clients: number;
+}
+
+export function Chart({ serverId }: { serverId: string }) {
+  const [range, setRange] = useState<TimeRanges["timeRanges"][number]>("1h");
+const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [rawData, setRawData] = useState<ServerHistory[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await fetch(`/api/server-history/${serverId}`, {
+        next: { revalidate: 60 },
+      });
+      console.log("Fetching server history data for:", serverId);
+      const data: ServerHistory[] = await res.json();
+      setRawData(data);
+      setChartData(convertToChartData(data, range));
+    };
+
+    fetchData();
+  }, [serverId]);
 
   const handleTimeRangeChange = (newRange: string) => {
-    const range = newRange as TimeRanges["timeRanges"][number];
-    setRange(range);
-    console.log(convertToChartData(data, range))
-    setChartData(convertToChartData(data, range));
+    const selected = newRange as TimeRanges["timeRanges"][number];
+    setRange(selected);
+    setChartData(convertToChartData(rawData, selected));
   };
 
   return (
@@ -126,7 +143,8 @@ export function Chart({ data }: { data: ServerHistory[] }) {
             <Button
               key={item}
               onClick={() => handleTimeRangeChange(item)}
-              variant={range === item ? "default" : "secondary"}>
+              variant={range === item ? "default" : "secondary"}
+            >
               {item}
             </Button>
           ))}
@@ -134,14 +152,12 @@ export function Chart({ data }: { data: ServerHistory[] }) {
       </CardFooter>
 
       <CardContent>
-        <ChartContainer config={chartConfig} className="max-h-[300px] w-full" >
+        <ChartContainer config={chartConfig} className="max-h-[300px] w-full">
           <LineChart
             accessibilityLayer
             data={chartData}
-            margin={{
-              left: 12,
-              right: 12,
-            }}>
+            margin={{ left: 12, right: 12 }}
+          >
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="timestamp"
@@ -163,3 +179,4 @@ export function Chart({ data }: { data: ServerHistory[] }) {
     </Card>
   );
 }
+

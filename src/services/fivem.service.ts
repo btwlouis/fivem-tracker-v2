@@ -217,7 +217,6 @@ export async function getServers() {
     const updateBatches = [];
     const historyBatches = [];
 
-
     for (let i = 0; i < toCreate.length; i += batchSize) {
       const batch = toCreate.slice(i, i + batchSize);
 
@@ -261,9 +260,7 @@ export async function getServers() {
         })
       );
     }
-    console.log(
-      `To create: ${toCreate.length}, to update: ${toUpdate.length}`
-    );
+    console.log(`To create: ${toCreate.length}, to update: ${toUpdate.length}`);
     await Promise.allSettled(createBatches);
     await Promise.allSettled(updateBatches);
     await Promise.allSettled(historyBatches);
@@ -289,8 +286,9 @@ export async function deleteOldServers() {
   });
 
   // delete servers where serverHistory is older then 3 days
-  const threeDaysAgo = new Date();
-  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+  const now = new Date();
+  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+
   const serversToDelete = await prisma.server.findMany({
     where: {
       server_history: {
@@ -305,15 +303,23 @@ export async function deleteOldServers() {
       id: true,
     },
   });
-  const idsToDelete = serversToDelete.map((server) => server.id);
-  if (idsToDelete.length > 0) {
-    await prisma.server.deleteMany({
-      where: {
-        id: {
-          in: idsToDelete,
-        },
+
+  console.log("Servers to delete:", serversToDelete.map((s) => s.id));
+
+  if (serversToDelete.length > 0) {
+    const idsToDelete = serversToDelete.map((server) => server.id);
+
+  // 3. Lösche die Server (server_history wird durch onDelete: Cascade mit gelöscht)
+  await prisma.server.deleteMany({
+    where: {
+      id: {
+        in: idsToDelete,
       },
-    });
+    },
+  });
+
+    console.log(`Deleted ${idsToDelete.length} old servers`);
+  } else {
+    console.log("No old servers to delete");
   }
-  console.log(`Deleted ${idsToDelete.length} old servers`);
 }

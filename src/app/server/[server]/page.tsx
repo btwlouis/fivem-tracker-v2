@@ -25,7 +25,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { colorMap } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import type { Server, ServerHistory } from "@prisma/client";
+import type { Server } from "@prisma/client";
 import { Metadata } from "next";
 
 // Revalidate every 60 seconds (ISR)
@@ -53,7 +53,8 @@ export async function generateMetadata({
   const serverResult = await getServer(server);
 
   return {
-    title: serverResult?.serverData?.projectName?.replace(/\^(\d)/g, "") || "Server",
+    title:
+      serverResult?.serverData?.projectName?.replace(/\^(\d)/g, "") || "Server",
     description:
       serverResult?.serverData?.projectDescription?.replace(/\^(\d)/g, "") ||
       "Server",
@@ -71,14 +72,8 @@ async function getServer(serverId: string) {
       where: { id: serverId },
     })) as Server;
 
-    const serverHistory = (await prisma.serverHistory.findMany({
-      where: { server_id: serverId },
-      orderBy: { timestamp: "desc" },
-    })) as ServerHistory[];
-
     return {
       serverData,
-      serverHistory,
     };
   } catch (error) {
     console.error("Failed to fetch server:", error);
@@ -99,7 +94,7 @@ export default async function Server({
     return notFound();
   }
 
-  const { serverData, serverHistory } = serverResult;
+  const { serverData } = serverResult;
 
   const formattedProjectName =
     serverData.projectName?.replace(
@@ -110,11 +105,10 @@ export default async function Server({
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <Link 
-        prefetch={false} 
+      <Link
+        prefetch={false}
         href="/"
-        className="flex items-center text-sm text-muted-foreground hover:underline"
-      >
+        className="flex items-center text-sm text-muted-foreground hover:underline">
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back
       </Link>
@@ -211,7 +205,7 @@ export default async function Server({
         </CardContent>
       </Card>
 
-      <Chart data={serverHistory} />
+      <Chart serverId={serverData.id} />
     </div>
   );
 }
