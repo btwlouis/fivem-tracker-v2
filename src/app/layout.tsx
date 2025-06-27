@@ -16,8 +16,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const domain = process.env.PLAUSIBLE_DOMAIN || "";
-  const host = process.env.PLAUSIBLE_HOST || "";
+  const domain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN || "";
+  const host = process.env.NEXT_PUBLIC_PLAUSIBLE_HOST || "";
 
   return (
     <>
