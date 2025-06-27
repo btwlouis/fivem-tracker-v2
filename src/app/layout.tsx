@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { GoogleAnalytics } from '@next/third-parties/google'
+import PlausibleProvider from 'next-plausible'
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,20 +16,24 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const domain = process.env.PLAUSIBLE_DOMAIN || "";
+
+
   return (
     <>
-      <html lang="en" suppressHydrationWarning>
-        <body className={`${inter.className} antialiased `}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange>
-            {children}
-          </ThemeProvider>
-        </body>
-        <GoogleAnalytics gaId="G-124B5F85LC" />
-      </html>
+      <PlausibleProvider domain={domain}>
+        <html lang="en" suppressHydrationWarning>
+          <body className={`${inter.className} antialiased `}>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange>
+              {children}
+            </ThemeProvider>
+          </body>
+        </html>
+      </PlausibleProvider>
     </>
   );
 }
