@@ -4,10 +4,8 @@ import * as React from "react";
 import {
   ColumnDef,
   SortingState,
-  ColumnFiltersState,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -30,6 +28,9 @@ interface DataTableProps<TData, TValue> {
   totalCount: number;
   currentPage: number;
   totalPages: number;
+  searchQuery?: string;
+  onSearch?: (value: string) => void;
+  isSearching?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -38,23 +39,23 @@ export function DataTable<TData, TValue>({
   totalCount,
   currentPage,
   totalPages,
+  searchQuery = "",
+  onSearch,
+  isSearching = false,
 }: DataTableProps<TData, TValue>) {
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    onColumnFiltersChange: setColumnFilters,
-    getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
     state: {
       sorting,
-      columnFilters,
     },
     manualPagination: true,
+    manualFiltering: true, // We handle filtering server-side
     pageCount: totalPages,
   });
 
@@ -65,20 +66,27 @@ export function DataTable<TData, TValue>({
   const handlePageChange = (newPage: number) => {
     const url = new URL(window.location.href);
     url.searchParams.set('page', newPage.toString());
-    window.location.href = url.toString();
+    window.history.pushState({}, '', url.toString());
+    // Trigger a custom event so our ServerList component can listen for page changes
+    window.dispatchEvent(new CustomEvent('pageChange', { detail: { page: newPage } }));
   };
 
   return (
     <div>
       <div className="flex items-center py-4">
-        <Input
-          placeholder="Search servers..."
-          value={(table.getColumn("projectName")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("projectName")?.setFilterValue(event.target.value)
-          }
-          className="max-w-full"
-        />
+        <div className="relative max-w-full">
+          <Input
+            placeholder="Search servers..."
+            value={searchQuery}
+            onChange={(event) => onSearch?.(event.target.value)}
+            className="max-w-full"
+          />
+          {isSearching && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500"></div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="rounded-md border">
