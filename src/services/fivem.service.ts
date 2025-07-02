@@ -304,19 +304,22 @@ export async function deleteOldServers() {
     },
   });
 
-  console.log("Servers to delete:", serversToDelete.map((s) => s.id));
+  console.log(
+    "Servers to delete:",
+    serversToDelete.map((s) => s.id)
+  );
 
   if (serversToDelete.length > 0) {
     const idsToDelete = serversToDelete.map((server) => server.id);
 
-  // 3. Lösche die Server (server_history wird durch onDelete: Cascade mit gelöscht)
-  await prisma.server.deleteMany({
-    where: {
-      id: {
-        in: idsToDelete,
+    // 3. Lösche die Server (server_history wird durch onDelete: Cascade mit gelöscht)
+    await prisma.server.deleteMany({
+      where: {
+        id: {
+          in: idsToDelete,
+        },
       },
-    },
-  });
+    });
 
     console.log(`Deleted ${idsToDelete.length} old servers`);
   } else {
