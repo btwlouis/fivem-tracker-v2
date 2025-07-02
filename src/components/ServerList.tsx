@@ -43,7 +43,7 @@ export default function ServerList() {
       
       const searchParams = new URLSearchParams(window.location.search);
       const currentPage = searchParams.get("page") || "1";
-      const locale = searchParams.get("locale") || "de";
+      const locale = searchParams.get("locale") || "DE";
       
       // If we're searching, reset to page 1
       const pageToUse = searchValue.trim() && searchValue !== "" ? "1" : currentPage;
@@ -85,10 +85,6 @@ export default function ServerList() {
       setIsSearching(false);
     }
   }, [searchQuery]);
-
-  useEffect(() => {
-    fetchServers();
-  }, [fetchServers]);
 
   useEffect(() => {
     fetchServers();
