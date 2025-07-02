@@ -190,9 +190,7 @@ export async function getServers() {
           server: sanitizeString(server.server ?? ""),
         };
 
-        if (server.locale.toLowerCase() == "de") {
           servers.push(data);
-        }
       } catch (error) {
         console.error(`Error processing server ${server.id}:`, error);
       }
