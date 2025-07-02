@@ -3,49 +3,50 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model ServerHistory {
-  id            Int       @id @default(autoincrement())
-  server_id  String   @db.VarChar(255) // Foreign key for servers.id
+  id         Int      @id @default(autoincrement())
+  server_id  String
 
   clients    Int
-  timestamp  DateTime @default(now()) @db.Timestamp(0)
+  timestamp  DateTime @default(now())
 
-  server     Server  @relation(fields: [server_id], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "FK_server_history_servers")
+  server     Server   @relation(fields: [server_id], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "FK_server_history_servers")
 
   @@index([timestamp], map: "timestamp")
 }
 
 model Server {
-  id                 String           @id @db.VarChar(255)
-  locale             String           @db.VarChar(255)
-  localeCountry      String           @db.VarChar(255)
-  hostname           String?          @db.Text
-  joinId             String?          @db.VarChar(255)
-  projectName        String?          @db.VarChar(255)
-  projectDescription String           @db.LongText
+  id                 String          @id
+  locale             String
+  localeCountry      String
+  hostname           String?
+  joinId             String?
+  projectName        String?
+  projectDescription String
   upvotePower        Int?
   burstPower         Int?
-  mapname            String?          @db.VarChar(255)
-  gametype           String?          @db.VarChar(255)
-  gamename           String?          @db.VarChar(255)
+  mapname            String?
+  gametype           String?
+  gamename           String?
   private            Boolean?
   scriptHookAllowed  Boolean?
-  enforceGameBuild   String?          @db.VarChar(255)
-  bannerConnecting   String?          @db.Text
-  bannerDetail       String?          @db.Text
-  server             String?          @db.VarChar(255)
+  enforceGameBuild   String?
+  bannerConnecting   String?
+  bannerDetail       String?
+  server             String?
   playersMax         Int?
   playersCurrent     Int?
   iconVersion        Int?
-  tags               String?          @db.LongText
-  resources          String?          @db.LongText
-  players            String?          @db.LongText
-  updated_at         DateTime         @updatedAt
-  created_at         DateTime         @default(now()) @db.Timestamp(0)
+  tags               String?
+  resources          String?
+  players            String?
+  updated_at         DateTime        @updatedAt
+  created_at         DateTime        @default(now())
+
   server_history     ServerHistory[]
 
   @@index([localeCountry, playersCurrent])
