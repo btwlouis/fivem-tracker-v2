@@ -165,6 +165,8 @@ export async function getServers() {
 
     await fetchServers(GameName.FiveM, async (server) => {
       try {
+        if(server.locale !== "de-DE") return; // only german servers
+        
         const data = {
           upvotePower: server.upvotePower ?? 0,
           burstPower: server.burstPower ?? 0,
