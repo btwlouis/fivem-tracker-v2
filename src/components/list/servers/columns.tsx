@@ -3,8 +3,9 @@
 import { ColumnDef } from "@tanstack/react-table";
 import Image from "next/image";
 import { ArrowUpDown } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import { colorMap } from "@/lib/utils";
+import { colorMap, formatRelativeDate, stripFivemFormatting } from "@/lib/utils";
 
 type ServerListItem = {
   id: string;
@@ -15,35 +16,42 @@ type ServerListItem = {
   iconVersion: number | null;
   rank: number;
   projectDescription: string | null;
+  mapname: string | null;
+  gametype: string | null;
+  updated_at: string;
 };
 
 export const columns: ColumnDef<ServerListItem>[] = [
   {
     accessorKey: "projectName",
-    header: "Project Name",
+    header: "Server",
     cell: ({ row }) => {
       const formattedProjectName =
-        row?.original?.projectName?.replace(
+        row.original.projectName?.replace(
           /\^(\d)/g,
           (_, code: string) =>
             `<span style='color: ${colorMap[`^${code}`] || "inherit"}'>`
         ) + "</span>";
 
       return (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-3">
           <Image
             src={`https://servers-frontend.fivem.net/api/servers/icon/${row.original.id}/${row.original.iconVersion}.png`}
-            width={32}
-            height={32}
+            width={36}
+            height={36}
             loading="lazy"
-            alt="Icon"
+            alt="Server icon"
+            className="rounded-lg"
           />
-          <div
-            className="truncate"
-            dangerouslySetInnerHTML={{ __html: formattedProjectName }}
-          />
-          <div className="truncate w-96 opacity-70">
-            {row.original.projectDescription}
+          <div className="min-w-0">
+            <div
+              className="truncate font-medium"
+              dangerouslySetInnerHTML={{ __html: formattedProjectName }}
+            />
+            <div className="truncate text-sm text-muted-foreground">
+              {stripFivemFormatting(row.original.projectDescription) ||
+                "No description available."}
+            </div>
           </div>
         </div>
       );
@@ -52,38 +60,41 @@ export const columns: ColumnDef<ServerListItem>[] = [
   {
     accessorKey: "localeCountry",
     header: "Country",
-    cell: ({ row }) => {
-      const localeCountry = row.original.localeCountry || "us";
-
-      return (
-        <>
-          {/* <Flag code={localeCountry} /> */}
-
-          <span className="ml-2">{localeCountry}</span>
-        </>
-      );
-    },
+    cell: ({ row }) => (
+      <div className="space-y-1">
+        <div>{row.original.localeCountry}</div>
+        <div className="text-xs text-muted-foreground">
+          {row.original.mapname || "Unknown map"}
+        </div>
+      </div>
+    ),
   },
   {
     accessorKey: "playersCurrent",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-          Players
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: (data) => {
-      return (
-        <div className="flex items-center space-x-2">
-          <span>{data.row.original.playersCurrent}</span>
-          <span>/</span>
-          <span>{data.row.original.playersMax}</span>
-        </div>
-      );
-    },
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Players
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2">
+        <span>{row.original.playersCurrent}</span>
+        <span>/</span>
+        <span>{row.original.playersMax}</span>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "updated_at",
+    header: "Updated",
+    cell: ({ row }) => (
+      <div className="text-sm text-muted-foreground">
+        {formatRelativeDate(row.original.updated_at)}
+      </div>
+    ),
   },
 ];

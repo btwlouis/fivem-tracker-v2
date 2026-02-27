@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getRetentionHistoryCutoffDate } from "@/lib/server-freshness";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -13,7 +14,12 @@ export async function GET(
     }
     
     const history = await prisma.serverHistory.findMany({
-      where: { server_id: serverId },
+      where: {
+        server_id: serverId,
+        timestamp: {
+          gte: getRetentionHistoryCutoffDate(),
+        },
+      },
       orderBy: { timestamp: "desc" },
     });
 

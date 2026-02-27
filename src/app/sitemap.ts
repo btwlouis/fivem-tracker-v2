@@ -1,30 +1,63 @@
-import { prisma } from "@/lib/prisma";
 import { MetadataRoute } from "next";
 
+import { prisma } from "@/lib/prisma";
+import { getVisibleHistoryCutoffDate } from "@/lib/server-freshness";
+import { siteConfig } from "@/lib/site";
+
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  try {
+    const historyCutoff = getVisibleHistoryCutoffDate();
+
     const servers = await prisma.server.findMany({
-        select: {
-            id: true,
-            projectName: true,
-            updated_at: true,
+      select: {
+        id: true,
+        updated_at: true,
+      },
+      where: {
+        playersCurrent: {
+          gt: 0,
         },
-        orderBy: {
-            playersCurrent: "desc",
+        server_history: {
+          some: {
+            timestamp: {
+              gte: historyCutoff,
+            },
+          },
         },
-        take: 5000,
+      },
+      orderBy: {
+        playersCurrent: "desc",
+      },
+      take: 5000,
     });
 
     const serverEntries: MetadataRoute.Sitemap = servers.map((server) => ({
-        url: `${process.env.NEXT_PUBLIC_BASE_URL}/server/${server.id}`,
-        lastModified: server.updated_at.toISOString(),
-        changefreq: "daily",
-    }))
+      url: `${siteConfig.baseUrl}/server/${server.id}`,
+      lastModified: server.updated_at,
+      changeFrequency: "daily",
+      priority: 0.7,
+    }));
 
     return [
-        {
-            url: `${process.env.NEXT_PUBLIC_BASE_URL}/`,
-            lastModified: new Date(),
-        },
-        ...serverEntries,
-    ]
+      {
+        url: `${siteConfig.baseUrl}/`,
+        lastModified: new Date(),
+        changeFrequency: "hourly",
+        priority: 1,
+      },
+      ...serverEntries,
+    ];
+  } catch (error) {
+    console.error("Failed to generate sitemap:", error);
+    return [
+      {
+        url: `${siteConfig.baseUrl}/`,
+        lastModified: new Date(),
+        changeFrequency: "hourly",
+        priority: 1,
+      },
+    ];
+  }
 }

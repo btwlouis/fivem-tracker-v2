@@ -1,59 +1,111 @@
-'use client';
+"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Activity, Globe2, Moon, Search, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { Sun, Moon, Filter } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { formatCompactNumber } from "@/lib/utils";
 
 interface HeaderProps {
-  languages: string[];
+  localeCount: number;
+  totalPlayers: number;
+  totalServers: number;
 }
 
-export default function Header({ languages }: HeaderProps) {
+export default function Header({
+  localeCount,
+  totalPlayers,
+  totalServers,
+}: HeaderProps) {
   const { theme, setTheme } = useTheme();
-  const [search, setSearch] = useState("");
+  const [mounted, setMounted] = useState(false);
 
-  const filterByLanguage = (language: string) => {
-    window.location.href = `/?locale=${language}`;
-  };
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
-    <header className="bg-background text-foreground py-4 flex flex-col sm:flex-row items-center justify-between">
-      <div className="text-center sm:text-left">
-        <h1 className="text-2xl font-bold">FiveM Tracker</h1>
-        <p className="text-muted-foreground">Unlock the power of FiveM</p>
-      </div>
-
-      <div className="mt-4 sm:mt-0 flex gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
-              <Filter className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-60">
-            <Input placeholder="Search country..." onChange={(e) => setSearch(e.target.value.toLowerCase())} />
-            <div className="mt-2 max-h-40 overflow-y-auto">
-              { 
-                languages
-                  .filter((x) => String(x).toLowerCase().includes(search))
-                  .map((language) => (
-                    <DropdownMenuItem key={language} onClick={() => filterByLanguage(language)}>
-                      {language}
-                    </DropdownMenuItem>
-                  ))
-              }
+    <section className="relative overflow-hidden rounded-3xl border border-border/70 bg-card/95 shadow-2xl shadow-sky-950/20">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.2),_transparent_30%),linear-gradient(180deg,rgba(2,8,23,0.25),transparent)]" />
+      <div className="relative space-y-8 p-6 sm:p-8 lg:p-10">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-4">
+            <div className="inline-flex items-center rounded-full border border-sky-400/20 bg-sky-500/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.22em] text-sky-300">
+              FiveM Tracker 
             </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <div className="space-y-3">
+              <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+                FiveM Tracker with player history
+              </h1>
+              <p className="max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
+                Browse active servers with player history of the last month. 
+              </p>
+            </div>
+          </div>
 
-        {/* Theme Toggle */}
-        <Button variant="outline" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>  
-          {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-        </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            aria-label="Toggle theme"
+            className="border-sky-400/20 bg-background/60"
+          >
+            {!mounted ? (
+              <div className="h-4 w-4" />
+            ) : theme === "dark" ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="border-sky-500/15 bg-slate-950/70 text-slate-50">
+            <CardContent className="flex items-center gap-4 p-5">
+              <div className="rounded-2xl bg-sky-500/15 p-3 text-sky-300">
+                <Search className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-300">Active servers</p>
+                <p className="text-2xl font-semibold">
+                  {formatCompactNumber(totalServers)}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-sky-500/15 bg-slate-950/70 text-slate-50">
+            <CardContent className="flex items-center gap-4 p-5">
+              <div className="rounded-2xl bg-sky-500/15 p-3 text-sky-300">
+                <Activity className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-300">Players live</p>
+                <p className="text-2xl font-semibold">
+                  {formatCompactNumber(totalPlayers)}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-sky-500/15 bg-slate-950/70 text-slate-50">
+            <CardContent className="flex items-center gap-4 p-5">
+              <div className="rounded-2xl bg-sky-500/15 p-3 text-sky-300">
+                <Globe2 className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-300">Visible regions</p>
+                <p className="text-2xl font-semibold">
+                  {formatCompactNumber(localeCount)}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </header>
+    </section>
   );
-};
+}

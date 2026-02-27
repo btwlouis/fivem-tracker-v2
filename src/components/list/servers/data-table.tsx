@@ -55,7 +55,7 @@ export function DataTable<TData, TValue>({
       sorting,
     },
     manualPagination: true,
-    manualFiltering: true, // We handle filtering server-side
+    manualFiltering: true,
     pageCount: totalPages,
   });
 
@@ -65,47 +65,44 @@ export function DataTable<TData, TValue>({
 
   const handlePageChange = (newPage: number) => {
     const url = new URL(window.location.href);
-    url.searchParams.set('page', newPage.toString());
-    window.history.pushState({}, '', url.toString());
-    // Trigger a custom event so our ServerList component can listen for page changes
-    window.dispatchEvent(new CustomEvent('pageChange', { detail: { page: newPage } }));
+    url.searchParams.set("page", newPage.toString());
+    window.history.pushState({}, "", url.toString());
+    window.dispatchEvent(new CustomEvent("pageChange", { detail: { page: newPage } }));
   };
 
   return (
-    <div>
+    <div className="rounded-3xl">
       <div className="flex items-center py-4">
-        <div className="relative max-w-full">
+        <div className="relative w-full max-w-xl">
           <Input
             placeholder="Search servers..."
             value={searchQuery}
             onChange={(event) => onSearch?.(event.target.value)}
-            className="max-w-full"
+            className="h-11 border-sky-500/20 bg-background/60 pl-4 pr-10"
           />
           {isSearching && (
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500"></div>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-sky-400" />
             </div>
           )}
         </div>
       </div>
 
-      <div className="rounded-md border">
+      <div className="overflow-hidden rounded-2xl border border-border/70">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
+              <TableRow key={headerGroup.id} className="bg-slate-950/60">
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
               </TableRow>
             ))}
           </TableHeader>
@@ -114,24 +111,20 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className="hover:cursor-pointer"
+                  className="cursor-pointer transition-colors hover:bg-slate-900/50"
                   onClick={() => redirectServer(row.original as Server)}
-                  data-state={row.getIsSelected() && "selected"}>
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center">
+                <TableCell colSpan={columns.length} className="h-24 text-center">
                   No results.
                 </TableCell>
               </TableRow>
@@ -149,14 +142,16 @@ export function DataTable<TData, TValue>({
             variant="outline"
             size="sm"
             onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage <= 1}>
+            disabled={currentPage <= 1}
+          >
             Previous
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage >= totalPages}>
+            disabled={currentPage >= totalPages}
+          >
             Next
           </Button>
         </div>

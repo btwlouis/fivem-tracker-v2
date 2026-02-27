@@ -100,6 +100,7 @@ export async function fetchServers(
 }
 
 import { prisma } from "@/lib/prisma";
+import { getRetentionHistoryCutoffDate } from "@/lib/server-freshness";
 
 function sanitizeString(input: string): string {
   if (typeof input !== "string") return input;
@@ -107,36 +108,42 @@ function sanitizeString(input: string): string {
   return sanitized.length > 255 ? sanitized.slice(0, 255) : sanitized;
 }
 
-interface ServerData {
-  upvotePower: number;
-  burstPower: number;
-  private: boolean;
-  scriptHookAllowed: boolean;
-  playersMax: number;
-  playersCurrent: number;
-  iconVersion: number;
+function sanitizeNullableString(input?: string | null) {
+  if (!input) {
+    return null;
+  }
 
-  id: string;
-  locale: string;
-  localeCountry: string;
-  hostname: string;
-  joinId: string;
-  projectName: string;
-  projectDescription: string;
-  mapname: string;
-  gametype: string;
-  gamename: string;
-  enforceGameBuild: string;
-  bannerConnecting: string;
-  bannerDetail: string;
-  server: string;
+  return sanitizeString(input);
+}
+
+function serializeJson(value: unknown) {
+  if (
+    value === undefined ||
+    value === null ||
+    (Array.isArray(value) && value.length === 0) ||
+    (typeof value === "object" &&
+      !Array.isArray(value) &&
+      Object.keys(value as Record<string, unknown>).length === 0)
+  ) {
+    return null;
+  }
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return null;
+  }
 }
 
 interface ServerData {
+  detailsLevel: number;
   upvotePower: number;
   burstPower: number;
   private: boolean;
   scriptHookAllowed: boolean;
+  offline: boolean;
+  canReview: boolean;
+  onesyncEnabled: boolean;
   playersMax: number;
   playersCurrent: number;
   iconVersion: number;
@@ -146,15 +153,33 @@ interface ServerData {
   localeCountry: string;
   hostname: string;
   joinId: string;
+  historicalAddress: string | null;
+  historicalIconURL: string | null;
+  connectEndPoints: string | null;
+  rawVariables: string | null;
+  variables: string | null;
   projectName: string;
   projectDescription: string;
   mapname: string;
   gametype: string;
   gamename: string;
+  licenseKeyToken: string | null;
+  fallback: string | null;
   enforceGameBuild: string;
+  pureLevel: string | null;
+  premium: string | null;
   bannerConnecting: string;
   bannerDetail: string;
+  ownerID: string | null;
+  ownerName: string | null;
+  ownerAvatar: string | null;
+  ownerProfile: string | null;
+  activitypubFeed: string | null;
   server: string;
+  supportStatus: string | null;
+  tags: string | null;
+  resources: string | null;
+  players: string | null;
 }
 
 export async function getServers() {
@@ -166,12 +191,16 @@ export async function getServers() {
     await fetchServers(GameName.FiveM, async (server) => {
       try {
         if(server.locale !== "de-DE") return; // only german servers
-        
+
         const data = {
+          detailsLevel: server.detailsLevel ?? 0,
           upvotePower: server.upvotePower ?? 0,
           burstPower: server.burstPower ?? 0,
           private: server.private ?? false,
           scriptHookAllowed: server.scriptHookAllowed ?? false,
+          offline: server.offline ?? false,
+          canReview: server.canReview ?? false,
+          onesyncEnabled: server.onesyncEnabled ?? false,
           playersMax: server.playersMax ?? 0,
           playersCurrent: server.playersCurrent ?? 0,
           iconVersion: server.iconVersion ?? 0,
@@ -181,18 +210,36 @@ export async function getServers() {
           localeCountry: sanitizeString(server.localeCountry),
           hostname: sanitizeString(server.hostname),
           joinId: sanitizeString(server.joinId ?? ""),
+          historicalAddress: sanitizeNullableString(server.historicalAddress),
+          historicalIconURL: sanitizeNullableString(server.historicalIconURL),
+          connectEndPoints: serializeJson(server.connectEndPoints),
+          rawVariables: serializeJson(server.rawVariables),
+          variables: serializeJson(server.variables),
           projectName: sanitizeString(server.projectName),
           projectDescription: sanitizeString(server.projectDescription ?? ""),
           mapname: sanitizeString(server.mapname ?? ""),
           gametype: sanitizeString(server.gametype ?? ""),
           gamename: sanitizeString(server.gamename ?? ""),
+          licenseKeyToken: sanitizeNullableString(server.licenseKeyToken),
+          fallback: serializeJson(server.fallback),
           enforceGameBuild: sanitizeString(server.enforceGameBuild ?? ""),
+          pureLevel: sanitizeNullableString(server.pureLevel),
+          premium: sanitizeNullableString(server.premium),
           bannerConnecting: sanitizeString(server.bannerConnecting ?? ""),
           bannerDetail: sanitizeString(server.bannerDetail ?? ""),
+          ownerID: sanitizeNullableString(server.ownerID),
+          ownerName: sanitizeNullableString(server.ownerName),
+          ownerAvatar: sanitizeNullableString(server.ownerAvatar),
+          ownerProfile: sanitizeNullableString(server.ownerProfile),
+          activitypubFeed: sanitizeNullableString(server.activitypubFeed),
           server: sanitizeString(server.server ?? ""),
+          supportStatus: sanitizeNullableString(server.supportStatus),
+          tags: serializeJson(server.tags),
+          resources: serializeJson(server.resources),
+          players: serializeJson(server.players),
         };
 
-          servers.push(data);
+        servers.push(data);
       } catch (error) {
         console.error(`Error processing server ${server.id}:`, error);
       }
@@ -275,28 +322,22 @@ export async function getServers() {
 }
 
 export async function deleteOldServers() {
-  // delete history where older then 1 week
-  const oneWeekAgo = new Date();
-  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+  const retentionCutoff = getRetentionHistoryCutoffDate();
 
   await prisma.serverHistory.deleteMany({
     where: {
       timestamp: {
-        lt: oneWeekAgo,
+        lt: retentionCutoff,
       },
     },
   });
-
-  // delete servers where serverHistory is older then 3 days
-  const now = new Date();
-  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
 
   const serversToDelete = await prisma.server.findMany({
     where: {
       server_history: {
         none: {
           timestamp: {
-            gte: threeDaysAgo,
+            gte: retentionCutoff,
           },
         },
       },

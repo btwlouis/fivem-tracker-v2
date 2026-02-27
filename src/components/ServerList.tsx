@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+
 import { columns } from "@/components/list/servers/columns";
 import { DataTable } from "@/components/list/servers/data-table";
 
@@ -13,6 +14,9 @@ type ServerListItem = {
   iconVersion: number | null;
   rank: number;
   projectDescription: string | null;
+  mapname: string | null;
+  gametype: string | null;
+  updated_at: string;
 };
 
 type ServerData = {
@@ -29,72 +33,67 @@ export default function ServerList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
-  const fetchServers = useCallback(async (search?: string) => {
-    try {
-      const searchValue = search !== undefined ? search : searchQuery;
-      
-      // Set different loading states for initial load vs search
-      if (searchValue.trim()) {
-        setIsSearching(true);
-      } else {
-        setLoading(true);
-      }
-      setError(null);
-      
-      const searchParams = new URLSearchParams(window.location.search);
-      const currentPage = searchParams.get("page") || "1";
-      const locale = searchParams.get("locale") || "DE";
-      
-      // If we're searching, reset to page 1
-      const pageToUse = searchValue.trim() && searchValue !== "" ? "1" : currentPage;
-      
-      const queryParams = new URLSearchParams({
-        locale: locale,
-        page: pageToUse,
-      });
-      
-      if (searchValue.trim()) {
-        queryParams.set("search", searchValue.trim());
-      }
-      
-      const response = await fetch(
-        `/api/servers/list?${queryParams.toString()}`,
-        {
-          cache: "no-store",
+  const fetchServers = useCallback(
+    async (search?: string) => {
+      try {
+        const searchValue = search !== undefined ? search : searchQuery;
+
+        if (searchValue.trim()) {
+          setIsSearching(true);
+        } else {
+          setLoading(true);
         }
-      );
-      
-      if (!response.ok) {
-        throw new Error("Failed to fetch servers");
+        setError(null);
+
+        const searchParams = new URLSearchParams(window.location.search);
+        const currentPage = searchParams.get("page") || "1";
+
+        const pageToUse =
+          searchValue.trim() && searchValue !== "" ? "1" : currentPage;
+
+        const queryParams = new URLSearchParams({
+          page: pageToUse,
+        });
+
+        if (searchValue.trim()) {
+          queryParams.set("search", searchValue.trim());
+        }
+
+        const response = await fetch(`/api/servers/list?${queryParams.toString()}`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch servers");
+        }
+
+        const data = await response.json();
+        setServerData(data);
+
+        if (pageToUse !== currentPage && searchValue.trim()) {
+          const url = new URL(window.location.href);
+          url.searchParams.set("page", pageToUse);
+          window.history.replaceState({}, "", url.toString());
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+        console.error("Error fetching servers:", err);
+      } finally {
+        setLoading(false);
+        setIsSearching(false);
       }
-      
-      const data = await response.json();
-      setServerData(data);
-      
-      // Update URL without causing re-render, only if page changed due to search
-      if (pageToUse !== currentPage && searchValue.trim()) {
-        const url = new URL(window.location.href);
-        url.searchParams.set('page', pageToUse);
-        window.history.replaceState({}, '', url.toString());
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-      console.error("Error fetching servers:", err);
-    } finally {
-      setLoading(false);
-      setIsSearching(false);
-    }
-  }, [searchQuery]);
+    },
+    [searchQuery]
+  );
 
   useEffect(() => {
     fetchServers();
   }, [fetchServers]);
 
-  // Handle search with debouncing
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       fetchServers();
-    }, 300); // 300ms debounce - faster response
+    }, 300);
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery, fetchServers]);
@@ -109,7 +108,6 @@ export default function ServerList() {
 
   useEffect(() => {
     const handlePageChange = () => {
-      // Force re-fetch when page changes via navigation
       fetchServers();
     };
 
@@ -121,21 +119,21 @@ export default function ServerList() {
       handlePageChange();
     };
 
-    window.addEventListener('popstate', handlePopState);
-    window.addEventListener('pageChange', handleCustomPageChange);
-    
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("pageChange", handleCustomPageChange);
+
     return () => {
-      window.removeEventListener('popstate', handlePopState);
-      window.removeEventListener('pageChange', handleCustomPageChange);
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("pageChange", handleCustomPageChange);
     };
   }, [fetchServers]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="flex items-center space-x-2">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-          <p className="text-white">Loading servers...</p>
+      <div className="flex items-center justify-center rounded-3xl border border-border/70 bg-card/95 py-10">
+        <div className="flex items-center space-x-3">
+          <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-sky-400" />
+          <p className="text-slate-300">Loading servers...</p>
         </div>
       </div>
     );
@@ -143,12 +141,12 @@ export default function ServerList() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center rounded-3xl border border-red-500/30 bg-card/95 py-10">
         <div className="text-center">
-          <p className="text-red-400 mb-2">Error loading servers: {error}</p>
+          <p className="mb-3 text-red-400">Error loading servers: {error}</p>
           <button
             onClick={handleRetry}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            className="rounded-lg bg-sky-600 px-4 py-2 text-white transition-colors hover:bg-sky-500"
           >
             Retry
           </button>
@@ -158,7 +156,11 @@ export default function ServerList() {
   }
 
   if (!serverData || serverData.servers.length === 0) {
-    return <p className="text-white text-center py-8">No servers available.</p>;
+    return (
+      <p className="rounded-3xl border border-border/70 bg-card/95 py-10 text-center text-muted-foreground">
+        No servers available.
+      </p>
+    );
   }
 
   return (

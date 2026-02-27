@@ -21,23 +21,42 @@ model ServerHistory {
 
 model Server {
   id                 String          @id
+  detailsLevel       Int?
   locale             String
   localeCountry      String
   hostname           String?
   joinId             String?
+  historicalAddress  String?
+  historicalIconURL  String?
+  connectEndPoints   String?
+  rawVariables       String?
+  variables          String?
   projectName        String?
   projectDescription String
   upvotePower        Int?
   burstPower         Int?
+  offline            Boolean?
   mapname            String?
   gametype           String?
   gamename           String?
+  licenseKeyToken    String?
+  fallback           String?
   private            Boolean?
   scriptHookAllowed  Boolean?
   enforceGameBuild   String?
+  pureLevel          String?
+  premium            String?
   bannerConnecting   String?
   bannerDetail       String?
+  canReview          Boolean?
+  ownerID            String?
+  ownerName          String?
+  ownerAvatar        String?
+  ownerProfile       String?
+  activitypubFeed    String?
+  onesyncEnabled     Boolean?
   server             String?
+  supportStatus      String?
   playersMax         Int?
   playersCurrent     Int?
   iconVersion        Int?

@@ -1,32 +1,42 @@
 import { prisma } from "@/lib/prisma";
+import { getVisibleHistoryCutoffDate } from "@/lib/server-freshness";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const locale = searchParams.get("locale") || "DE";
-  const page = parseInt(searchParams.get("page") || "1");
-  const pageSize = parseInt(searchParams.get("pageSize") || "50");
+  const locale = searchParams.get("locale");
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const pageSize = parseInt(searchParams.get("pageSize") || "50", 10);
   const search = searchParams.get("search") || "";
 
   try {
     const skip = (page - 1) * pageSize;
+    const historyCutoff = getVisibleHistoryCutoffDate();
 
-    // Build the where clause with search functionality
     const whereClause = {
-      localeCountry: locale,
+      ...(locale ? { localeCountry: locale } : {}),
       playersCurrent: {
         gt: 0,
+      },
+      server_history: {
+        some: {
+          timestamp: {
+            gte: historyCutoff,
+          },
+        },
       },
       ...(search && {
         OR: [
           {
             projectName: {
               contains: search,
+              mode: "insensitive" as const,
             },
           },
           {
             projectDescription: {
               contains: search,
+              mode: "insensitive" as const,
             },
           },
         ],
@@ -49,6 +59,9 @@ export async function GET(request: NextRequest) {
           playersMax: true,
           localeCountry: true,
           iconVersion: true,
+          mapname: true,
+          gametype: true,
+          updated_at: true,
         },
       }),
       prisma.server.count({
