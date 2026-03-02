@@ -25,6 +25,14 @@ export const metadata: Metadata = {
   applicationName: siteConfig.shortName,
   description: siteConfig.description,
   keywords: siteConfig.keywords,
+  icons: {
+    icon: [
+      { url: "/icon_white_transparent.png", type: "image/png" },
+      { url: "/icon_black_white_background.png", type: "image/png" },
+    ],
+    shortcut: "/icon_white_transparent.png",
+    apple: "/icon_black_white_background.png",
+  },
   category: "gaming",
   robots: {
     index: true,

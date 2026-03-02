@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Activity, Globe2, Moon, Search, Sun } from "lucide-react";
+import Image from "next/image";
 import { useTheme } from "next-themes";
 
 import { Button } from "@/components/ui/button";
@@ -32,8 +33,16 @@ export default function Header({
       <div className="relative space-y-8 p-6 sm:p-8 lg:p-10">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-4">
-            <div className="inline-flex items-center rounded-full border border-sky-400/20 bg-sky-500/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.22em] text-sky-300">
-              FiveM Tracker 
+            <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/20 bg-sky-500/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.22em] text-sky-300">
+              <Image
+                src="/icon_white_transparent.png"
+                alt="FiveM Tracker icon"
+                width={18}
+                height={18}
+                className="h-[18px] w-[18px] rounded-sm"
+                priority
+              />
+              FiveM Tracker
             </div>
             <div className="space-y-3">
               <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
