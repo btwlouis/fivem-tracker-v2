@@ -209,7 +209,7 @@ export default function ServerList() {
   if (!serverData) return null;
 
   return (
-    <div className="flex min-h-0 w-full flex-1 overflow-hidden">
+    <div className="flex min-h-0 w-full flex-1">
       <DataTable
         columns={columns}
         data={serverData.servers}

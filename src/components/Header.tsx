@@ -5,6 +5,7 @@ import { Moon, Sun, Users, Trophy, Server } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useTheme } from "next-themes";
+import { CircleFlag } from "react-circle-flags";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -126,9 +127,15 @@ export default function Header() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 rounded-full px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
-            onClick={() => setLocale(locale)}
+            className="h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
+            onClick={() => setLocale(otherLocale)}
           >
+            <CircleFlag
+              countryCode={locale === "de" ? "de" : "gb"}
+              height={14}
+              width={14}
+              className="shrink-0"
+            />
             {locale.toUpperCase()}
           </Button>
           <Button

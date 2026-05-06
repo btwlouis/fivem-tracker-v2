@@ -153,8 +153,8 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
       />
 
-      <div className="container mx-auto flex h-full min-h-0 w-full flex-col  px-4 py-4">
-        <section className="flex h-full min-h-0 w-full ">
+      <div className="container mx-auto flex h-full min-h-0 w-full flex-col px-4 py-6">
+        <section className="flex flex-1 min-h-0 w-full">
           <ServerList />
         </section>
       </div>

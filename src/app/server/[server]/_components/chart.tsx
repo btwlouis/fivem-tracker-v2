@@ -24,7 +24,10 @@ import type { ServerHistory } from "@prisma/client";
 const chartConfig = {
   clients: {
     label: "Spieler",
-    color: "hsl(var(--chart-1))",
+    theme: {
+      light: "var(--primary)",
+      dark: "var(--chart-2)",
+    },
   },
 } satisfies ChartConfig;
 
@@ -54,11 +57,11 @@ function convertToChartData(rawData: ServerHistory[], range: TimeRange) {
       return {
         timestamp:
           range === "7d" || range === "1m"
-            ? date.toLocaleDateString("en-US", {
+            ? date.toLocaleDateString("de-DE", {
                 month: "short",
                 day: "2-digit",
               })
-            : date.toLocaleTimeString("en-US", {
+            : date.toLocaleTimeString("de-DE", {
                 hour: "2-digit",
                 minute: "2-digit",
               }),
@@ -155,7 +158,7 @@ export function Chart({ serverId }: { serverId: string }) {
             margin={{ left: 8, right: 8, top: 12, bottom: 0 }}
           >
             <defs>
-              <linearGradient id="playersArea" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={`playersArea-${serverId}`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="var(--color-clients)" stopOpacity={0.28} />
                 <stop offset="65%" stopColor="var(--color-clients)" stopOpacity={0.1} />
                 <stop offset="100%" stopColor="var(--color-clients)" stopOpacity={0} />
@@ -178,14 +181,14 @@ export function Chart({ serverId }: { serverId: string }) {
             {peakPlayers > 0 ? (
               <ReferenceLine
                 y={peakPlayers}
-                stroke="hsl(var(--muted-foreground))"
+                stroke="var(--muted-foreground)"
                 strokeDasharray="4 4"
                 strokeOpacity={0.4}
               />
             ) : null}
             <ChartTooltip
               cursor={{
-                stroke: "hsl(var(--primary))",
+                stroke: "var(--primary)",
                 strokeWidth: 1,
                 strokeDasharray: "3 3",
               }}
@@ -194,20 +197,13 @@ export function Chart({ serverId }: { serverId: string }) {
             <Area
               type="monotone"
               dataKey="clients"
-              fill="url(#playersArea)"
-              stroke="none"
-              animationDuration={700}
-              animationEasing="ease-out"
-            />
-            <Line
-              dataKey="clients"
-              type="monotone"
+              fill={`url(#playersArea-${serverId})`}
               stroke="var(--color-clients)"
               strokeWidth={2.5}
               dot={false}
               activeDot={{
                 r: 6,
-                fill: "hsl(var(--background))",
+                fill: "var(--background)",
                 stroke: "var(--color-clients)",
                 strokeWidth: 3,
               }}

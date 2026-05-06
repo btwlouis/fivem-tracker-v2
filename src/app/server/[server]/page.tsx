@@ -4,13 +4,21 @@ import Link from "next/link";
 import {
   ArrowLeft,
   Clock3,
+  Code2,
+  Cpu,
+  ExternalLink,
   Gamepad2,
   Globe,
   Hash,
+  Languages,
+  Layers,
   LogIn,
   Map,
+  MapPin,
   Server as ServerIcon,
   Shield,
+  Star,
+  User,
   Users,
 } from "lucide-react";
 import { notFound } from "next/navigation";
@@ -52,7 +60,7 @@ export async function generateStaticParams(): Promise<Array<{ server: string }>>
     orderBy: {
       updated_at: "desc",
     },
-    take: 500,
+    take: 50,
   });
 
   return servers.map((server) => ({ server: server.id }));
@@ -246,7 +254,7 @@ export default async function ServerPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
-      <div className="container mx-auto flex min-h-full w-full flex-col gap-4 px-4 py-4">
+      <div className="container mx-auto flex min-h-full w-full flex-col gap-4 px-4 py-6">
         <Card className="rounded-[1.75rem] border border-border/70 bg-card/85 shadow-xl backdrop-blur">
           {serverData.bannerDetail ? (
             <Image
@@ -338,11 +346,11 @@ export default async function ServerPage({
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Card className="rounded-[1.5rem] border border-border/70 bg-card/85 shadow-sm">
             <CardContent className="px-5 py-5">
-              <Users className="h-5 w-5 text-primary" />
-              <p className="mt-3 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                <Users className="h-3.5 w-3.5 shrink-0 text-primary" />
                 Live-Spieler
-              </p>
-              <p className="mt-1 text-2xl font-semibold">
+              </div>
+              <p className="mt-2 text-2xl font-semibold">
                 {serverData.playersCurrent ?? 0}
                 <span className="text-base text-muted-foreground">
                   /{serverData.playersMax ?? 0}
@@ -353,21 +361,21 @@ export default async function ServerPage({
 
           <Card className="rounded-[1.5rem] border border-border/70 bg-card/85 shadow-sm">
             <CardContent className="px-5 py-5">
-              <Globe className="h-5 w-5 text-primary" />
-              <p className="mt-3 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                <Globe className="h-3.5 w-3.5 shrink-0 text-primary" />
                 Region
-              </p>
-              <p className="mt-1 text-2xl font-semibold">{serverData.localeCountry}</p>
+              </div>
+              <p className="mt-2 text-2xl font-semibold">{serverData.localeCountry}</p>
             </CardContent>
           </Card>
 
           <Card className="rounded-[1.5rem] border border-border/70 bg-card/85 shadow-sm">
             <CardContent className="px-5 py-5">
-              <Map className="h-5 w-5 text-primary" />
-              <p className="mt-3 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                <Map className="h-3.5 w-3.5 shrink-0 text-primary" />
                 Map
-              </p>
-              <p className="mt-1 text-lg font-semibold">
+              </div>
+              <p className="mt-2 text-lg font-semibold">
                 {serverData.mapname || "Unbekannt"}
               </p>
             </CardContent>
@@ -375,11 +383,11 @@ export default async function ServerPage({
 
           <Card className="rounded-[1.5rem] border border-border/70 bg-card/85 shadow-sm">
             <CardContent className="px-5 py-5">
-              <Clock3 className="h-5 w-5 text-primary" />
-              <p className="mt-3 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                <Clock3 className="h-3.5 w-3.5 shrink-0 text-primary" />
                 Letztes Update
-              </p>
-              <p className="mt-1 text-lg font-semibold">
+              </div>
+              <p className="mt-2 text-lg font-semibold">
                 {formatRelativeDate(serverData.updated_at)}
               </p>
             </CardContent>
@@ -392,91 +400,100 @@ export default async function ServerPage({
 
         <section className="grid gap-4 lg:grid-cols-2">
           <Card className="rounded-[1.75rem] border border-border/70 bg-card/85 shadow-xl backdrop-blur">
-            <CardHeader>
-              <h2 className="text-xl font-semibold tracking-tight">Server-Profil</h2>
-              <CardDescription>
+            <CardHeader className="pb-3">
+              <h2 className="flex items-center gap-2 text-base font-semibold tracking-tight">
+                <ServerIcon className="h-4 w-4 text-primary" />
+                Server-Profil
+              </h2>
+              <CardDescription className="text-xs">
                 Strukturierte Felder, die Spielern und Suchmaschinen Kontext geben.
               </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-                <div className="mb-2 flex items-center gap-2 font-medium">
-                  <Gamepad2 className="h-4 w-4 text-primary" />
-                  Spiel
+            <CardContent className="grid gap-2 sm:grid-cols-2">
+              {(
+                [
+                  { Icon: Gamepad2, label: "Spiel", value: getGameName(serverData.gamename) },
+                  { Icon: Shield, label: "Script Hook", value: serverData.scriptHookAllowed ? "Erlaubt" : "Nicht erlaubt" },
+                  { Icon: ServerIcon, label: "OneSync", value: serverData.onesyncEnabled ? "Aktiv" : "Deaktiviert" },
+                  { Icon: Star, label: "Premium", value: serverData.premium || "Kein Premium" },
+                  { Icon: Hash, label: "Server-ID", value: serverData.id },
+                  { Icon: Hash, label: "Join-ID", value: serverData.joinId || "–" },
+                ] as const
+              ).map(({ Icon, label, value }) => (
+                <div key={label} className="rounded-xl border border-border/70 bg-background/70 px-3 py-2.5">
+                  <div className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                    <Icon className="h-3 w-3 shrink-0 text-primary" />
+                    {label}
+                  </div>
+                  <p className="truncate text-sm font-medium">{value}</p>
                 </div>
-                <p className="text-sm text-muted-foreground">{getGameName(serverData.gamename)}</p>
-              </div>
-              <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-                <div className="mb-2 flex items-center gap-2 font-medium">
-                  <Shield className="h-4 w-4 text-primary" />
-                  Script Hook
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {serverData.scriptHookAllowed ? "Erlaubt" : "Nicht erlaubt"}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-                <div className="mb-2 flex items-center gap-2 font-medium">
-                  <Hash className="h-4 w-4 text-primary" />
-                  Server-ID
-                </div>
-                <p className="break-all text-sm text-muted-foreground">{serverData.id}</p>
-              </div>
-              <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-                <div className="mb-2 flex items-center gap-2 font-medium">
-                  <Hash className="h-4 w-4 text-primary" />
-                  Join-ID
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {serverData.joinId || "Nicht verfügbar"}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-                <div className="mb-2 flex items-center gap-2 font-medium">
-                  <ServerIcon className="h-4 w-4 text-primary" />
-                  OneSync
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {serverData.onesyncEnabled ? "Aktiv" : "Deaktiviert"}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-                <div className="mb-2 flex items-center gap-2 font-medium">
-                  <Globe className="h-4 w-4 text-primary" />
-                  Premium
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {serverData.premium || "Nicht verfügbar"}
-                </p>
-              </div>
+              ))}
             </CardContent>
           </Card>
 
           <Card className="rounded-[1.75rem] border border-border/70 bg-card/85 shadow-xl backdrop-blur">
-            <CardHeader>
-              <h2 className="text-xl font-semibold tracking-tight">Technische Details</h2>
-              <CardDescription>
-                Zusätzliche Metadaten für Analyse, Zuordnung und Serververgleich.
+            <CardHeader className="pb-3">
+              <h2 className="flex items-center gap-2 text-base font-semibold tracking-tight">
+                <Cpu className="h-4 w-4 text-primary" />
+                Technische Details
+              </h2>
+              <CardDescription className="text-xs">
+                Metadaten für Analyse, Zuordnung und Serververgleich.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm leading-7 text-muted-foreground">
-              <p>Hostname: {serverData.hostname || "Nicht verfügbar"}</p>
-              <p>Server-Software: {serverData.server || "Nicht verfügbar"}</p>
-              <p>Build: {serverData.enforceGameBuild || "Nicht verfügbar"}</p>
-              <p>Historische Adresse: {serverData.historicalAddress || "Nicht verfügbar"}</p>
-              <p>Owner: {serverData.ownerName || "Nicht verfügbar"}</p>
-              <p>Support-Status: {serverData.supportStatus || "Nicht verfügbar"}</p>
+            <CardContent className="grid gap-2 sm:grid-cols-2">
+              {(
+                [
+                  { Icon: ServerIcon, label: "Hostname", value: serverData.hostname || "–" },
+                  { Icon: Code2, label: "Server-Software", value: serverData.server || "–" },
+                  { Icon: Layers, label: "Game Build", value: serverData.enforceGameBuild || "Standard" },
+                  { Icon: Shield, label: "Pure Level", value: serverData.pureLevel || "–" },
+                  { Icon: Languages, label: "Sprache", value: serverData.locale || "–" },
+                  { Icon: MapPin, label: "Hist. Adresse", value: serverData.historicalAddress || "–" },
+                  { Icon: User, label: "Owner", value: serverData.ownerName || "–" },
+                  { Icon: Hash, label: "Support-Status", value: serverData.supportStatus || "–" },
+                ] as const
+              ).map(({ Icon, label, value }) => (
+                <div key={label} className="rounded-xl border border-border/70 bg-background/70 px-3 py-2.5">
+                  <div className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                    <Icon className="h-3 w-3 shrink-0 text-primary" />
+                    {label}
+                  </div>
+                  <p className="truncate text-sm font-medium">{String(value)}</p>
+                </div>
+              ))}
+              {serverData.ownerProfile ? (
+                <div className="rounded-xl border border-border/70 bg-background/70 px-3 py-2.5">
+                  <div className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                    <ExternalLink className="h-3 w-3 shrink-0 text-primary" />
+                    Owner-Profil
+                  </div>
+                  <a
+                    href={serverData.ownerProfile}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="truncate text-sm font-medium text-primary hover:underline"
+                  >
+                    Profil öffnen
+                  </a>
+                </div>
+              ) : null}
               {connectEndPoints.length ? (
-                <div className="space-y-2 pt-2">
-                  <p className="font-medium text-foreground">Connect-Endpunkte</p>
-                  {connectEndPoints.map((endpoint) => (
-                    <div
-                      key={endpoint}
-                      className="break-all rounded-xl border border-border/70 bg-background/70 px-3 py-2"
-                    >
-                      {endpoint}
-                    </div>
-                  ))}
+                <div className="rounded-xl border border-border/70 bg-background/70 px-3 py-2.5 sm:col-span-2">
+                  <div className="mb-2 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                    <ServerIcon className="h-3 w-3 shrink-0 text-primary" />
+                    Connect-Endpunkte
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {connectEndPoints.map((endpoint) => (
+                      <span
+                        key={endpoint}
+                        className="break-all rounded-lg border border-border/70 bg-muted/40 px-2 py-1 text-xs text-muted-foreground"
+                      >
+                        {endpoint}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               ) : null}
             </CardContent>
