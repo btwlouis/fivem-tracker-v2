@@ -60,7 +60,6 @@ export async function generateStaticParams(): Promise<Array<{ server: string }>>
     orderBy: {
       updated_at: "desc",
     },
-    take: 50,
   });
 
   return servers.map((server) => ({ server: server.id }));
