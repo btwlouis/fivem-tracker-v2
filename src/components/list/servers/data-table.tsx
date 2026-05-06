@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/lib/i18n";
 
@@ -80,8 +80,9 @@ export function DataTable<TData, TValue>({
   };
 
   return (
-    <Card className="grid h-full min-h-0 w-full max-w-none flex-1 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-[1.75rem] border-border/70 bg-card/85 shadow-xl backdrop-blur">
-      <CardHeader className="shrink-0 border-b border-border/60 bg-muted/20 px-4 py-3">
+    <Card className="grid h-full min-h-0 w-full max-w-none flex-1 grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-[1.75rem] border-border/70 bg-card/85 py-0 shadow-xl backdrop-blur">
+      {/* toolbar */}
+      <div className="shrink-0 border-b border-border/60 bg-muted/20 px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-1 rounded-full border border-border/70 bg-background/75 p-1">
             {SORT_OPTIONS.map(({ key, Icon }) => (
@@ -113,9 +114,10 @@ export function DataTable<TData, TValue>({
             )}
           </div>
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
+      {/* body */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div
           ref={scrollContainerRef}
           className="relative min-h-0 flex-1 overflow-auto overscroll-contain"
@@ -202,7 +204,7 @@ export function DataTable<TData, TValue>({
           <span>{t("table.showing", { loaded: data.length, total: totalCount })}</span>
           <span>{hasMore ? "" : t("table.allLoaded")}</span>
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 }

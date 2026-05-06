@@ -345,7 +345,7 @@ export default async function ServerPage({
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Card className="rounded-[1.5rem] border border-border/70 bg-card/85 shadow-sm">
-            <CardContent className="px-5 py-5">
+            <CardContent className="flex flex-col items-center px-5 py-5 text-center">
               <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 <Users className="h-3.5 w-3.5 shrink-0 text-primary" />
                 Live-Spieler
@@ -360,7 +360,7 @@ export default async function ServerPage({
           </Card>
 
           <Card className="rounded-[1.5rem] border border-border/70 bg-card/85 shadow-sm">
-            <CardContent className="px-5 py-5">
+            <CardContent className="flex flex-col items-center px-5 py-5 text-center">
               <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 <Globe className="h-3.5 w-3.5 shrink-0 text-primary" />
                 Region
@@ -370,7 +370,7 @@ export default async function ServerPage({
           </Card>
 
           <Card className="rounded-[1.5rem] border border-border/70 bg-card/85 shadow-sm">
-            <CardContent className="px-5 py-5">
+            <CardContent className="flex flex-col items-center px-5 py-5 text-center">
               <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 <Map className="h-3.5 w-3.5 shrink-0 text-primary" />
                 Map
@@ -382,7 +382,7 @@ export default async function ServerPage({
           </Card>
 
           <Card className="rounded-[1.5rem] border border-border/70 bg-card/85 shadow-sm">
-            <CardContent className="px-5 py-5">
+            <CardContent className="flex flex-col items-center px-5 py-5 text-center">
               <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 <Clock3 className="h-3.5 w-3.5 shrink-0 text-primary" />
                 Letztes Update
@@ -444,13 +444,13 @@ export default async function ServerPage({
             <CardContent className="grid gap-2 sm:grid-cols-2">
               {(
                 [
-                  { Icon: ServerIcon, label: "Hostname", value: serverData.hostname || "–" },
+                  { Icon: ServerIcon, label: "Hostname", value: stripFivemFormatting(serverData.hostname) || "–" },
                   { Icon: Code2, label: "Server-Software", value: serverData.server || "–" },
                   { Icon: Layers, label: "Game Build", value: serverData.enforceGameBuild || "Standard" },
                   { Icon: Shield, label: "Pure Level", value: serverData.pureLevel || "–" },
                   { Icon: Languages, label: "Sprache", value: serverData.locale || "–" },
                   { Icon: MapPin, label: "Hist. Adresse", value: serverData.historicalAddress || "–" },
-                  { Icon: User, label: "Owner", value: serverData.ownerName || "–" },
+                  { Icon: User, label: "Owner", value: stripFivemFormatting(serverData.ownerName) || "–" },
                   { Icon: Hash, label: "Support-Status", value: serverData.supportStatus || "–" },
                 ] as const
               ).map(({ Icon, label, value }) => (
