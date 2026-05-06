@@ -1,14 +1,14 @@
 import { MetadataRoute } from "next";
 
 import { prisma } from "@/lib/prisma";
-import { getVisibleHistoryCutoffDate } from "@/lib/server-freshness";
+import { getRetentionHistoryCutoffDate } from "@/lib/server-freshness";
 import { siteConfig } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
-    const historyCutoff = getVisibleHistoryCutoffDate();
+    const historyCutoff = getRetentionHistoryCutoffDate();
 
     const servers = await prisma.server.findMany({
       select: {
@@ -16,9 +16,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         updated_at: true,
       },
       where: {
-        playersCurrent: {
-          gt: 0,
-        },
         server_history: {
           some: {
             timestamp: {
@@ -28,24 +25,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         },
       },
       orderBy: {
-        playersCurrent: "desc",
+        updated_at: "desc",
       },
       take: 5000,
     });
 
-    const serverEntries: MetadataRoute.Sitemap = servers.map((server) => ({
-      url: `${siteConfig.baseUrl}/server/${server.id}`,
-      lastModified: server.updated_at,
-      changeFrequency: "daily",
-      priority: 0.7,
-    }));
+    const serverEntries: MetadataRoute.Sitemap = servers.map(
+      (server: { id: string; updated_at: Date }) => ({
+        url: `${siteConfig.baseUrl}/server/${server.id}`,
+        lastModified: server.updated_at,
+        changeFrequency: "daily",
+        priority: 0.7,
+      })
+    );
 
     return [
       {
         url: `${siteConfig.baseUrl}/`,
         lastModified: new Date(),
-        changeFrequency: "hourly",
-        priority: 1,
+        changeFrequency: "daily",
+        priority: 0.8,
       },
       ...serverEntries,
     ];
@@ -55,8 +54,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       {
         url: `${siteConfig.baseUrl}/`,
         lastModified: new Date(),
-        changeFrequency: "hourly",
-        priority: 1,
+        changeFrequency: "daily",
+        priority: 0.8,
       },
     ];
   }

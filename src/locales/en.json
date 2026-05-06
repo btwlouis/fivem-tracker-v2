@@ -1,0 +1,35 @@
+{
+  "stats": {
+    "playersOnline": "Players Online",
+    "record": "All-time Record",
+    "servers": "Active Servers"
+  },
+  "sort": {
+    "label": "Sort",
+    "players": "Players",
+    "upvotes": "Upvotes",
+    "record": "Record"
+  },
+  "table": {
+    "searchPlaceholder": "Search server names...",
+    "rank": "#",
+    "server": "Server",
+    "tags": "Tags",
+    "record": "Record",
+    "country": "Country",
+    "players": "Players",
+    "serverIcon": "Server icon",
+    "noDescription": "No description",
+    "noResults": "No servers found.",
+    "showing": "Showing {{loaded}} of {{total}} servers",
+    "allLoaded": "All servers loaded",
+    "loadingMore": "Loading more servers...",
+    "retry": "Retry",
+    "errorLoading": "Failed to load servers"
+  },
+  "nav": {
+    "title": "FiveM Tracker",
+    "subtitle": "Live FiveM server list for roleplay, city and RP servers",
+    "toggleTheme": "Toggle theme"
+  }
+}

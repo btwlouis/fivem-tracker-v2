@@ -255,7 +255,9 @@ export async function getServers() {
       select: { id: true },
     });
 
-    const existingIds = new Set(existingServers.map((s) => s.id));
+    const existingIds = new Set(
+      existingServers.map((server: { id: string }) => server.id)
+    );
 
     const toUpdate = servers.filter((server) => existingIds.has(server.id));
     const toCreate = servers.filter((server) => !existingIds.has(server.id));
@@ -349,11 +351,13 @@ export async function deleteOldServers() {
 
   console.log(
     "Servers to delete:",
-    serversToDelete.map((s) => s.id)
+    serversToDelete.map((server: { id: string }) => server.id)
   );
 
   if (serversToDelete.length > 0) {
-    const idsToDelete = serversToDelete.map((server) => server.id);
+    const idsToDelete = serversToDelete.map(
+      (server: { id: string }) => server.id
+    );
 
     // 3. Lösche die Server (server_history wird durch onDelete: Cascade mit gelöscht)
     await prisma.server.deleteMany({

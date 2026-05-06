@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(npx prisma *)",
+      "WebFetch(domain:ui.shadcn.com)",
+      "Bash(npx shadcn@latest add --preset b5JNecjwO)",
+      "Bash(npx shadcn@canary init --preset b5JNecjwO --silent)",
+      "Bash(npx shadcn@canary init --preset b5JNecjwO)",
+      "Bash(npx shadcn@canary init --preset b5JNecjwO --yes --force)",
+      "Bash(node -e \"const p = require\\('z:/Kunden/OnLouis/fivem-tracker/node_modules/shadcn/package.json'\\); console.log\\(JSON.stringify\\({exports: p.exports, main: p.main}, null, 2\\)\\)\")",
+      "Bash(node -e \"const p = require\\('z:/Kunden/OnLouis/fivem-tracker/node_modules/tw-animate-css/package.json'\\); console.log\\(JSON.stringify\\({exports: p.exports, main: p.main, style: p.style}, null, 2\\)\\)\")",
+      "Bash(npm run *)"
+    ]
+  }
+}

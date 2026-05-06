@@ -1,120 +1,148 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Activity, Globe2, Moon, Search, Sun } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Moon, Sun, Users, Trophy, Server } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useTheme } from "next-themes";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatCompactNumber } from "@/lib/utils";
+import { useTranslation, type Locale } from "@/lib/i18n";
 
-interface HeaderProps {
-  localeCount: number;
+type Stats = {
   totalPlayers: number;
+  totalRecord: number;
   totalServers: number;
-}
+};
 
-export default function Header({
-  localeCount,
-  totalPlayers,
-  totalServers,
-}: HeaderProps) {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
+function StatPill({
+  label,
+  value,
+  Icon,
+}: {
+  label: string;
+  value: string | null;
+  Icon: typeof Users;
+}) {
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-border/70 bg-card/95 shadow-2xl shadow-sky-950/20">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.2),_transparent_30%),linear-gradient(180deg,rgba(2,8,23,0.25),transparent)]" />
-      <div className="relative space-y-8 p-6 sm:p-8 lg:p-10">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/20 bg-sky-500/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.22em] text-sky-300">
-              <Image
-                src="/icon_white_transparent.png"
-                alt="FiveM Tracker icon"
-                width={18}
-                height={18}
-                className="h-[18px] w-[18px] rounded-sm"
-                priority
-              />
-              FiveM Tracker
-            </div>
-            <div className="space-y-3">
-              <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-                FiveM Tracker with player history
-              </h1>
-              <p className="max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
-                Browse active servers with player history of the last month. 
-              </p>
-            </div>
-          </div>
-
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            aria-label="Toggle theme"
-            className="border-sky-400/20 bg-background/60"
-          >
-            {!mounted ? (
-              <div className="h-4 w-4" />
-            ) : theme === "dark" ? (
-              <Sun className="h-4 w-4" />
-            ) : (
-              <Moon className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card className="border-sky-500/15 bg-slate-950/70 text-slate-50">
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className="rounded-2xl bg-sky-500/15 p-3 text-sky-300">
-                <Search className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-300">Active servers</p>
-                <p className="text-2xl font-semibold">
-                  {formatCompactNumber(totalServers)}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-sky-500/15 bg-slate-950/70 text-slate-50">
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className="rounded-2xl bg-sky-500/15 p-3 text-sky-300">
-                <Activity className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-300">Players live</p>
-                <p className="text-2xl font-semibold">
-                  {formatCompactNumber(totalPlayers)}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-sky-500/15 bg-slate-950/70 text-slate-50">
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className="rounded-2xl bg-sky-500/15 p-3 text-sky-300">
-                <Globe2 className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-300">Visible regions</p>
-                <p className="text-2xl font-semibold">
-                  {formatCompactNumber(localeCount)}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+    <div className="min-w-[8.75rem] rounded-full border border-border/70 bg-card/80 px-3 py-2 shadow-xs backdrop-blur">
+      <div className="flex items-center gap-2">
+        <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        <div className="min-w-0">
+          <p className="truncate text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            {label}
+          </p>
+          {value ? (
+            <p className="text-sm font-semibold tabular-nums text-foreground">
+              {value}
+            </p>
+          ) : (
+            <Skeleton className="mt-1 h-4 w-14" />
+          )}
         </div>
       </div>
-    </section>
+    </div>
+  );
+}
+
+export default function Header() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const [stats, setStats] = useState<Stats | null>(null);
+  const { t, locale, setLocale } = useTranslation();
+  const headerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const update = () => {
+      if (headerRef.current) {
+        document.documentElement.style.setProperty(
+          "--header-height",
+          `${headerRef.current.offsetHeight}px`
+        );
+      }
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    if (headerRef.current) observer.observe(headerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/stats")
+      .then((r) => r.json())
+      .then((data) => setStats(data as Stats))
+      .catch(() => {});
+  }, []);
+
+  const otherLocale: Locale = locale === "de" ? "en" : "de";
+
+  return (
+    <header
+      ref={headerRef}
+      className="shrink-0 border-b border-border/70 bg-background/85 backdrop-blur-xl"
+    >
+      <div className="container mx-auto flex w-full flex-wrap items-center gap-3 px-4 py-3">
+        <Link href="/" className="flex shrink-0 items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border/70 bg-primary text-primary-foreground shadow-xs">
+            <Image
+              src="/icon_white_transparent.png"
+              alt="FiveM Tracker"
+              width={18}
+              height={18}
+              className="h-[18px] w-[18px]"
+              priority
+            />
+          </div>
+          <div>
+            <span className="block text-sm font-semibold tracking-tight">
+              {t("nav.title")}
+            </span>
+            {/* <span className="block text-[11px] text-muted-foreground">
+              {t("nav.subtitle")}
+            </span> */}
+          </div>
+        </Link>
+
+        <div className="flex flex-1 flex-wrap items-center justify-center gap-2">
+          <StatPill
+            label={t("stats.playersOnline")}
+            value={stats ? formatCompactNumber(stats.totalPlayers) : null}
+            Icon={Users}
+          />
+          <StatPill
+            label={t("stats.record")}
+            value={stats ? formatCompactNumber(stats.totalRecord) : null}
+            Icon={Trophy}
+          />
+          <StatPill
+            label={t("stats.servers")}
+            value={stats ? formatCompactNumber(stats.totalServers) : null}
+            Icon={Server}
+          />
+        </div>
+
+        <div className="ml-auto flex shrink-0 items-center gap-1 rounded-full border border-border/70 bg-card/80 p-1 shadow-xs backdrop-blur">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 rounded-full px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
+            onClick={() => setLocale(locale)}
+          >
+            {locale.toUpperCase()}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative h-8 w-8 rounded-full"
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            aria-label={t("nav.toggleTheme")}
+          >
+            <Sun className="h-4 w-4 scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
+            <Moon className="absolute h-4 w-4 scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
+          </Button>
+        </div>
+      </div>
+    </header>
   );
 }

@@ -1,12 +1,11 @@
 "use client";
-import * as React from "react";
 
+import * as React from "react";
+import { Loader2, Search, Trophy, TrendingUp, Users } from "lucide-react";
 import {
   ColumnDef,
-  SortingState,
   flexRender,
   getCoreRowModel,
-  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 
@@ -20,142 +19,190 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Server } from "@prisma/client";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "@/lib/i18n";
+
+export type SortOption = "players" | "upvotes" | "record";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   totalCount: number;
-  currentPage: number;
-  totalPages: number;
   searchQuery?: string;
   onSearch?: (value: string) => void;
   isSearching?: boolean;
+  isRefreshing?: boolean;
+  isFetchingMore?: boolean;
+  hasMore?: boolean;
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
+  loadMoreRef?: React.RefObject<HTMLDivElement | null>;
+  sortBy?: SortOption;
+  onSortChange?: (sort: SortOption) => void;
 }
+
+const SORT_OPTIONS: { key: SortOption; Icon: typeof Users }[] = [
+  { key: "players", Icon: Users },
+  { key: "upvotes", Icon: TrendingUp },
+  { key: "record", Icon: Trophy },
+];
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   totalCount,
-  currentPage,
-  totalPages,
   searchQuery = "",
   onSearch,
   isSearching = false,
+  isRefreshing = false,
+  isFetchingMore = false,
+  hasMore = false,
+  scrollContainerRef,
+  loadMoreRef,
+  sortBy = "players",
+  onSortChange,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const { t } = useTranslation();
+  const visibleColumnCount = Math.max(columns.length, 1);
+  const skeletonRowCount = Math.min(Math.max(data.length, 8), 12);
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    onSortingChange: setSorting,
-    getSortedRowModel: getSortedRowModel(),
-    state: {
-      sorting,
-    },
-    manualPagination: true,
-    manualFiltering: true,
-    pageCount: totalPages,
   });
 
-  const redirectServer = (server: Server) => {
-    window.location.href = `/server/${server.id}`;
-  };
-
-  const handlePageChange = (newPage: number) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("page", newPage.toString());
-    window.history.pushState({}, "", url.toString());
-    window.dispatchEvent(new CustomEvent("pageChange", { detail: { page: newPage } }));
+  const redirectServer = (server: TData) => {
+    const candidate = server as { id?: string };
+    if (candidate.id) {
+      window.location.href = `/server/${candidate.id}`;
+    }
   };
 
   return (
-    <div className="rounded-3xl">
-      <div className="flex items-center py-4">
-        <div className="relative w-full max-w-xl">
-          <Input
-            placeholder="Search servers..."
-            value={searchQuery}
-            onChange={(event) => onSearch?.(event.target.value)}
-            className="h-11 border-sky-500/20 bg-background/60 pl-4 pr-10"
-          />
-          {isSearching && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-sky-400" />
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="overflow-hidden rounded-2xl border border-border/70">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="bg-slate-950/60">
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
+    <Card className="grid h-full min-h-0 w-full max-w-none flex-1 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-[1.75rem] border-border/70 bg-card/85 shadow-xl backdrop-blur">
+      <CardHeader className="shrink-0 border-b border-border/60 bg-muted/20 px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-1 rounded-full border border-border/70 bg-background/75 p-1">
+            {SORT_OPTIONS.map(({ key, Icon }) => (
+              <Button
+                key={key}
+                variant={sortBy === key ? "default" : "ghost"}
+                size="sm"
+                className="h-8 rounded-full px-3 text-xs"
+                onClick={() => onSortChange?.(key)}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {t(`sort.${key}`)}
+              </Button>
             ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="cursor-pointer transition-colors hover:bg-slate-900/50"
-                  onClick={() => redirectServer(row.original as Server)}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
+          </div>
+
+          <div className="relative w-full max-w-sm">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={t("table.searchPlaceholder")}
+              value={searchQuery}
+              onChange={(e) => onSearch?.(e.target.value)}
+              className="h-10 rounded-full border-border/70 bg-background/75 pl-9 pr-8 text-sm shadow-none"
+            />
+            {isSearching && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+              </div>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
+        <div
+          ref={scrollContainerRef}
+          className="relative min-h-0 flex-1 overflow-auto overscroll-contain"
+        >
+          <Table>
+            <TableHeader className="sticky top-0 z-10">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="bg-transparent hover:bg-transparent">
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      className="h-9 border-b border-border/60 bg-background/95 px-2 py-2 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground backdrop-blur"
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {isRefreshing ? (
+                Array.from({ length: skeletonRowCount }).map((_, index) => (
+                  <TableRow key={`skeleton-${index}`} className="border-b border-border/50">
+                    <TableCell colSpan={visibleColumnCount} className="py-2.5">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-4 w-6 shrink-0" />
+                        <Skeleton className="h-7 w-7 shrink-0 rounded-md" />
+                        <div className="min-w-0 flex flex-1 flex-col gap-1">
+                          <Skeleton className="h-3.5 w-36 max-w-[45%]" />
+                          <Skeleton className="h-3 w-56 max-w-[65%]" />
+                        </div>
+                        <div className="ml-auto hidden items-center gap-2 md:flex">
+                          <Skeleton className="h-5 w-12 rounded-full" />
+                          <Skeleton className="h-5 w-14 rounded-full" />
+                          <Skeleton className="h-4 w-12" />
+                          <Skeleton className="h-5 w-6 rounded-full" />
+                          <Skeleton className="h-4 w-16" />
+                        </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    className="cursor-pointer border-b border-border/50 hover:bg-muted/25"
+                    onClick={() => redirectServer(row.original)}
+                    data-state={row.getIsSelected() ? "selected" : undefined}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="px-2 py-2.5">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={visibleColumnCount}
+                    className="h-20 text-center text-sm text-muted-foreground"
+                  >
+                    {t("table.noResults")}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
 
-      <div className="flex items-center justify-between space-x-2 py-4">
-        <div className="text-sm text-muted-foreground">
-          Showing {data.length} of {totalCount} results
+          <div ref={loadMoreRef} className="flex min-h-12 items-center justify-center px-4 py-3">
+            {isFetchingMore ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                {t("table.loadingMore")}
+              </div>
+            ) : null}
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage <= 1}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage >= totalPages}
-          >
-            Next
-          </Button>
+
+        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
+          <span>{t("table.showing", { loaded: data.length, total: totalCount })}</span>
+          <span>{hasMore ? "" : t("table.allLoaded")}</span>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

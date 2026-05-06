@@ -2,99 +2,157 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import Image from "next/image";
-import { ArrowUpDown } from "lucide-react";
+import Link from "next/link";
+import { Trophy } from "lucide-react";
+import { CircleFlag } from "react-circle-flags";
 
-import { Button } from "@/components/ui/button";
-import { colorMap, formatRelativeDate, stripFivemFormatting } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { colorMap, formatCompactNumber, parseServerTags, stripFivemFormatting } from "@/lib/utils";
 
-type ServerListItem = {
+export type ServerListItem = {
   id: string;
   projectName: string | null;
+  projectDescription: string | null;
   playersCurrent: number | null;
   playersMax: number | null;
   localeCountry: string;
   iconVersion: number | null;
   rank: number;
-  projectDescription: string | null;
-  mapname: string | null;
-  gametype: string | null;
-  updated_at: string;
+  tags: string | null;
+  upvotePower: number | null;
+  record: number;
 };
 
-export const columns: ColumnDef<ServerListItem>[] = [
-  {
-    accessorKey: "projectName",
-    header: "Server",
-    cell: ({ row }) => {
-      const formattedProjectName =
-        row.original.projectName?.replace(
-          /\^(\d)/g,
-          (_, code: string) =>
-            `<span style='color: ${colorMap[`^${code}`] || "inherit"}'>`
-        ) + "</span>";
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
-      return (
-        <div className="flex items-center gap-3">
-          <Image
-            src={`https://servers-frontend.fivem.net/api/servers/icon/${row.original.id}/${row.original.iconVersion}.png`}
-            width={36}
-            height={36}
-            loading="lazy"
-            alt="Server icon"
-            className="rounded-lg"
-          />
-          <div className="min-w-0">
-            <div
-              className="truncate font-medium"
-              dangerouslySetInnerHTML={{ __html: formattedProjectName }}
+function formatFivemName(name: string | null): string {
+  if (!name) return "";
+  const parts = name.split(/(\^\d)/);
+  let html = "";
+  let open = false;
+  for (const part of parts) {
+    if (/^\^\d$/.test(part)) {
+      if (open) html += "</span>";
+      html += `<span style="color:${colorMap[part] ?? "inherit"}">`;
+      open = true;
+    } else {
+      html += escapeHtml(part);
+    }
+  }
+  if (open) html += "</span>";
+  return html || escapeHtml(name);
+}
+
+export function getServerColumns(
+  t: (key: string, vars?: Record<string, string | number>) => string
+): ColumnDef<ServerListItem>[] {
+  return [
+    {
+      id: "server",
+      accessorKey: "projectName",
+      header: t("table.server"),
+      cell: ({ row }) => {
+        const { id, iconVersion, rank, projectName, projectDescription } = row.original;
+        const formattedName = formatFivemName(projectName);
+        const description = stripFivemFormatting(projectDescription);
+
+        return (
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="w-6 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
+              {rank}
+            </span>
+            <Image
+              src={
+                iconVersion
+                  ? `https://servers-frontend.fivem.net/api/servers/icon/${id}/${iconVersion}.png`
+                  : `https://placehold.co/28x28/1a1a2e/4a90d9?text=FV`
+              }
+              width={28}
+              height={28}
+              loading="lazy"
+              sizes="28px"
+              alt={t("table.serverIcon")}
+              className="h-7 w-7 shrink-0 rounded-md object-cover"
             />
-            <div className="truncate text-sm text-muted-foreground">
-              {stripFivemFormatting(row.original.projectDescription) ||
-                "No description available."}
+            <div className="min-w-0">
+              <Link
+                href={`/server/${id}`}
+                className="block truncate text-sm font-medium leading-tight transition-colors hover:text-primary"
+                dangerouslySetInnerHTML={{ __html: formattedName }}
+              />
+              <div className="mt-0.5 truncate text-[11px] leading-tight text-muted-foreground">
+                {description || t("table.noDescription")}
+              </div>
             </div>
           </div>
-        </div>
-      );
+        );
+      },
     },
-  },
-  {
-    accessorKey: "localeCountry",
-    header: "Country",
-    cell: ({ row }) => (
-      <div className="space-y-1">
-        <div>{row.original.localeCountry}</div>
-        <div className="text-xs text-muted-foreground">
-          {row.original.mapname || "Unknown map"}
+    {
+      id: "tags",
+      accessorKey: "tags",
+      header: t("table.tags"),
+      cell: ({ row }) => {
+        const tags = parseServerTags(row.original.tags).slice(0, 3);
+        if (!tags.length) return null;
+        return (
+          <div className="flex flex-wrap gap-1">
+            {tags.map((tag: string) => (
+              <Badge
+                key={tag}
+                variant="secondary"
+                className="h-5 px-1.5 text-[10px] font-normal"
+              >
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
+    },
+    {
+      id: "record",
+      accessorKey: "record",
+      header: t("table.record"),
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1 tabular-nums text-xs sm:text-sm">
+          <Trophy className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+          <span>{formatCompactNumber(row.original.record)}</span>
         </div>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "playersCurrent",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Players
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <span>{row.original.playersCurrent}</span>
-        <span>/</span>
-        <span>{row.original.playersMax}</span>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "updated_at",
-    header: "Updated",
-    cell: ({ row }) => (
-      <div className="text-sm text-muted-foreground">
-        {formatRelativeDate(row.original.updated_at)}
-      </div>
-    ),
-  },
-];
+      ),
+    },
+    {
+      id: "country",
+      accessorKey: "localeCountry",
+      header: t("table.country"),
+      cell: ({ row }) => {
+        const code = row.original.localeCountry?.toLowerCase() ?? "";
+        return (
+          <div className="flex items-center gap-1.5">
+            <CircleFlag countryCode={code} height={16} width={16} />
+            <span className="text-[11px] uppercase text-muted-foreground">
+              {row.original.localeCountry}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      id: "players",
+      accessorKey: "playersCurrent",
+      header: t("table.players"),
+      cell: ({ row }) => (
+        <div className="text-right text-xs tabular-nums sm:text-sm">
+          <span className="font-medium">{row.original.playersCurrent ?? 0}</span>
+          <span className="text-muted-foreground">/{row.original.playersMax ?? 0}</span>
+        </div>
+      ),
+    },
+  ];
+}

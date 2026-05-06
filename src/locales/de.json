@@ -1,0 +1,35 @@
+{
+  "stats": {
+    "playersOnline": "Spieler Online",
+    "record": "Allzeit-Rekord",
+    "servers": "Aktive Server"
+  },
+  "sort": {
+    "label": "Sortierung",
+    "players": "Spieler",
+    "upvotes": "Upvotes",
+    "record": "Rekord"
+  },
+  "table": {
+    "searchPlaceholder": "Servername suchen...",
+    "rank": "#",
+    "server": "Server",
+    "tags": "Tags",
+    "record": "Rekord",
+    "country": "Land",
+    "players": "Spieler",
+    "serverIcon": "Server-Icon",
+    "noDescription": "Keine Beschreibung",
+    "noResults": "Keine Server gefunden.",
+    "showing": "{{loaded}} von {{total}} Servern",
+    "allLoaded": "Alle Server geladen",
+    "loadingMore": "Weitere Server werden geladen...",
+    "retry": "Erneut versuchen",
+    "errorLoading": "Server konnten nicht geladen werden"
+  },
+  "nav": {
+    "title": "FiveM Tracker",
+    "subtitle": "Live FiveM Serverliste fuer Roleplay, City- und RP-Server",
+    "toggleTheme": "Theme wechseln"
+  }
+}
