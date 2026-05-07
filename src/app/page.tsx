@@ -141,24 +141,6 @@ export default async function Home() {
       />
 
       <div className="container mx-auto flex h-full min-h-0 w-full flex-col gap-5 px-4 py-6">
-        <section className="shrink-0 rounded-[1.75rem] border border-border/70 bg-card/85 px-6 py-5 shadow-xl backdrop-blur">
-          <div className="max-w-4xl space-y-3">
-            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-              FiveM Server Liste mit Live-Spielerzahlen und Detailseiten
-            </h1>
-            <p className="text-sm leading-7 text-muted-foreground sm:text-base">
-              Der Tracker zeigt aktuell {totalServers} aktive FiveM Server mit zusammen{" "}
-              {totalPlayers} Live-Spielern, laufend aktualisierten Spielerzahlen und
-              indexierbaren Detailseiten fur serverbezogene Suchanfragen.
-            </p>
-            <p className="text-sm leading-7 text-muted-foreground">
-              Du kannst Server nach Spielern, Rekorden und Upvotes sortieren und direkt in
-              die jeweiligen Profilseiten mit Historie, Metadaten und Verbindungsinfos
-              wechseln.
-            </p>
-          </div>
-        </section>
-
         <section className="flex min-h-0 flex-1 w-full">
           <ServerList initialData={initialServerData} />
         </section>
