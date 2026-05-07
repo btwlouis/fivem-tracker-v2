@@ -5,17 +5,10 @@ import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getServerColumns, type ServerListItem } from "@/components/list/servers/columns";
-import { DataTable, type SortOption } from "@/components/list/servers/data-table";
+import { getServerColumns } from "@/components/list/servers/columns";
+import { DataTable } from "@/components/list/servers/data-table";
 import { useTranslation } from "@/lib/i18n";
-
-type ServerData = {
-  servers: ServerListItem[];
-  totalCount: number;
-  currentPage: number;
-  totalPages: number;
-  hasMore: boolean;
-};
+import type { ServerListResponse, SortOption } from "@/lib/server-list-types";
 
 const PAGE_SIZE = 30;
 
@@ -51,11 +44,15 @@ function ServerListSkeleton() {
   );
 }
 
-export default function ServerList() {
+type ServerListProps = {
+  initialData?: ServerListResponse;
+};
+
+export default function ServerList({ initialData }: ServerListProps) {
   const { t } = useTranslation();
   const columns = getServerColumns(t);
-  const [serverData, setServerData] = useState<ServerData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [serverData, setServerData] = useState<ServerListResponse | null>(initialData ?? null);
+  const [loading, setLoading] = useState(!initialData);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -67,7 +64,8 @@ export default function ServerList() {
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const latestRequestRef = useRef(0);
   const prevSortRef = useRef<SortOption>("players");
-  const hasLoadedDataRef = useRef(false);
+  const hasLoadedDataRef = useRef(Boolean(initialData));
+  const skipInitialFetchRef = useRef(Boolean(initialData));
 
   const fetchServers = useCallback(
     async ({
@@ -107,7 +105,7 @@ export default function ServerList() {
         });
         if (!response.ok) throw new Error("Failed to fetch servers");
 
-        const data = (await response.json()) as ServerData;
+        const data = (await response.json()) as ServerListResponse;
         if (latestRequestRef.current !== requestId) return;
 
         hasLoadedDataRef.current = true;
@@ -138,6 +136,11 @@ export default function ServerList() {
   );
 
   useEffect(() => {
+    if (skipInitialFetchRef.current) {
+      skipInitialFetchRef.current = false;
+      return;
+    }
+
     const sortChanged = prevSortRef.current !== sortBy;
     prevSortRef.current = sortBy;
 

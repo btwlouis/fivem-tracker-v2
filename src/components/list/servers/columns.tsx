@@ -7,21 +7,8 @@ import { Trophy } from "lucide-react";
 import { CircleFlag } from "react-circle-flags";
 
 import { Badge } from "@/components/ui/badge";
+import type { ServerListItem } from "@/lib/server-list-types";
 import { colorMap, formatCompactNumber, parseServerTags, stripFivemFormatting } from "@/lib/utils";
-
-export type ServerListItem = {
-  id: string;
-  projectName: string | null;
-  projectDescription: string | null;
-  playersCurrent: number | null;
-  playersMax: number | null;
-  localeCountry: string;
-  iconVersion: number | null;
-  rank: number;
-  tags: string | null;
-  upvotePower: number | null;
-  record: number;
-};
 
 function escapeHtml(str: string): string {
   return str

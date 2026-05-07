@@ -2,21 +2,18 @@ import type { Metadata } from "next";
 
 import ServerList from "@/components/ServerList";
 import { prisma } from "@/lib/prisma";
+import { getServerListPage } from "@/lib/server-list-query";
 import { getVisibleHistoryCutoffDate } from "@/lib/server-freshness";
 import { siteConfig } from "@/lib/site";
+import type { ServerListItem } from "@/lib/server-list-types";
 import { stripFivemFormatting } from "@/lib/utils";
 
 export const revalidate = 300;
 
 type HomepageServer = {
-  id: string;
   projectName: string | null;
-  projectDescription: string;
+  projectDescription: string | null;
   localeCountry: string;
-  gametype: string | null;
-  playersCurrent: number | null;
-  playersMax: number | null;
-  tags: string | null;
 };
 
 function getActiveWhere() {
@@ -48,23 +45,11 @@ function getServerDescription(server: HomepageServer) {
 async function getHomepageData() {
   const where = getActiveWhere();
 
-  const [featuredServers, stats, countries] = await Promise.all([
-    prisma.server.findMany({
-      where,
-      select: {
-        id: true,
-        projectName: true,
-        projectDescription: true,
-        localeCountry: true,
-        gametype: true,
-        playersCurrent: true,
-        playersMax: true,
-        tags: true,
-      },
-      orderBy: {
-        playersCurrent: "desc",
-      },
-      take: 6,
+  const [initialServerData, stats, countries] = await Promise.all([
+    getServerListPage({
+      page: 1,
+      pageSize: 30,
+      sort: "players",
     }),
     prisma.server.aggregate({
       where,
@@ -86,8 +71,9 @@ async function getHomepageData() {
   ]);
 
   return {
-    featuredServers,
-    totalServers: stats._count.id,
+    featuredServers: initialServerData.servers.slice(0, 6),
+    initialServerData,
+    totalServers: initialServerData.totalCount || stats._count.id,
     totalPlayers: stats._sum.playersCurrent || 0,
     countries: countries.map((country) => country.localeCountry).filter(Boolean),
   };
@@ -116,7 +102,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const { featuredServers } = await getHomepageData();
+  const { featuredServers, initialServerData, totalPlayers, totalServers } = await getHomepageData();
 
   const websiteJsonLd = {
     "@context": "https://schema.org",
@@ -130,7 +116,8 @@ export default async function Home() {
   const itemListJsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    itemListElement: featuredServers.map((server, index) => ({
+    numberOfItems: featuredServers.length,
+    itemListElement: featuredServers.map((server: ServerListItem, index) => ({
       "@type": "ListItem",
       position: index + 1,
       url: `${siteConfig.baseUrl}/server/${server.id}`,
@@ -141,7 +128,7 @@ export default async function Home() {
 
   return (
     <main
-      className="flex min-h-0 w-full flex-1 "
+      className="flex min-h-0 w-full flex-1"
       style={{ height: "calc(100dvh - var(--header-height, 53px))" }}
     >
       <script
@@ -153,9 +140,27 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
       />
 
-      <div className="container mx-auto flex h-full min-h-0 w-full flex-col px-4 py-6">
-        <section className="flex flex-1 min-h-0 w-full">
-          <ServerList />
+      <div className="container mx-auto flex h-full min-h-0 w-full flex-col gap-5 px-4 py-6">
+        <section className="shrink-0 rounded-[1.75rem] border border-border/70 bg-card/85 px-6 py-5 shadow-xl backdrop-blur">
+          <div className="max-w-4xl space-y-3">
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              FiveM Server Liste mit Live-Spielerzahlen und Detailseiten
+            </h1>
+            <p className="text-sm leading-7 text-muted-foreground sm:text-base">
+              Der Tracker zeigt aktuell {totalServers} aktive FiveM Server mit zusammen{" "}
+              {totalPlayers} Live-Spielern, laufend aktualisierten Spielerzahlen und
+              indexierbaren Detailseiten fur serverbezogene Suchanfragen.
+            </p>
+            <p className="text-sm leading-7 text-muted-foreground">
+              Du kannst Server nach Spielern, Rekorden und Upvotes sortieren und direkt in
+              die jeweiligen Profilseiten mit Historie, Metadaten und Verbindungsinfos
+              wechseln.
+            </p>
+          </div>
+        </section>
+
+        <section className="flex min-h-0 flex-1 w-full">
+          <ServerList initialData={initialServerData} />
         </section>
       </div>
     </main>
