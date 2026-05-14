@@ -1,37 +1,53 @@
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { getRetentionHistoryCutoffDate, getVisibleHistoryCutoffDate } from "@/lib/server-freshness";
+import { getVisibleHistoryCutoffDate } from "@/lib/server-freshness";
 import { NextResponse } from "next/server";
 
 const fetchStats = unstable_cache(
   async () => {
     const historyCutoff = getVisibleHistoryCutoffDate();
-    const retentionCutoff = getRetentionHistoryCutoffDate();
 
-    const [serverStats, recordResult] = await Promise.all([
-      prisma.server.aggregate({
-        where: {
-          playersCurrent: { gt: 0 },
-          server_history: { some: { timestamp: { gte: historyCutoff } } },
-        },
-        _count: { id: true },
-        _sum: { playersCurrent: true },
-      }),
-      prisma.$queryRaw<[{ total_record: bigint }]>`
-        SELECT COALESCE(SUM(max_clients), 0) AS total_record
-        FROM (
-          SELECT MAX(clients) AS max_clients
-          FROM "ServerHistory"
-          WHERE timestamp >= ${retentionCutoff}
-          GROUP BY server_id
-        ) sub
-      `,
-    ]);
+    const stats = await prisma.serverStats.aggregate({
+      where: {
+        currentPlayers: { gt: 0 },
+        lastSeen: { gte: historyCutoff },
+      },
+      _count: { server_id: true },
+      _sum: {
+        currentPlayers: true,
+        maxPlayers30d: true,
+      },
+    });
+
+    if (stats._count.server_id > 0) {
+      return {
+        totalPlayers: stats._sum.currentPlayers ?? 0,
+        totalServers: stats._count.server_id,
+        totalRecord: stats._sum.maxPlayers30d ?? 0,
+      };
+    }
+
+    if (process.env.NODE_ENV === "production") {
+      return {
+        totalPlayers: 0,
+        totalServers: 0,
+        totalRecord: 0,
+      };
+    }
+
+    const serverStats = await prisma.server.aggregate({
+      where: {
+        playersCurrent: { gt: 0 },
+        server_history: { some: { timestamp: { gte: historyCutoff } } },
+      },
+      _count: { id: true },
+      _sum: { playersCurrent: true },
+    });
 
     return {
       totalPlayers: serverStats._sum.playersCurrent ?? 0,
       totalServers: serverStats._count.id,
-      totalRecord: Number(recordResult[0]?.total_record ?? 0),
+      totalRecord: 0,
     };
   },
   ["homepage-stats"],

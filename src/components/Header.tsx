@@ -4,13 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { Moon, Sun, Users, Trophy, Server } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useTheme } from "next-themes";
 import { CircleFlag } from "react-circle-flags";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCompactNumber } from "@/lib/utils";
 import { useTranslation, type Locale } from "@/lib/i18n";
+import { useTheme } from "@/components/theme-provider";
 
 type Stats = {
   totalPlayers: number;

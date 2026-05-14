@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
-import { getRetentionHistoryCutoffDate, getVisibleHistoryCutoffDate } from "@/lib/server-freshness";
+import { getVisibleHistoryCutoffDate } from "@/lib/server-freshness";
 import type { ServerListItem, ServerListResponse, SortOption } from "@/lib/server-list-types";
 
 type ServerRow = Omit<ServerListItem, "rank" | "record"> & {
@@ -28,14 +28,23 @@ export async function getServerListPage({
   const skip = (normalizedPage - 1) * normalizedPageSize;
   const trimmedSearch = search.trim();
   const historyCutoff = getVisibleHistoryCutoffDate();
-  const retentionCutoff = getRetentionHistoryCutoffDate();
+  const activeSummaryCount = await prisma.serverStats.count({
+    where: {
+      currentPlayers: { gt: 0 },
+      lastSeen: { gte: historyCutoff },
+    },
+  });
+  const useHistoryFallback =
+    activeSummaryCount === 0 && process.env.NODE_ENV !== "production";
 
   const conditions: Prisma.Sql[] = [
     Prisma.sql`s."playersCurrent" > 0`,
-    Prisma.sql`EXISTS (
-      SELECT 1 FROM "ServerHistory" sh2
-      WHERE sh2.server_id = s.id AND sh2.timestamp >= ${historyCutoff}
-    )`,
+    useHistoryFallback
+      ? Prisma.sql`EXISTS (
+          SELECT 1 FROM "ServerHistory" sh2
+          WHERE sh2.server_id = s.id AND sh2.timestamp >= ${historyCutoff}
+        )`
+      : Prisma.sql`st."lastSeen" >= ${historyCutoff}`,
   ];
 
   if (locale) {
@@ -70,14 +79,9 @@ export async function getServerListPage({
         s."iconVersion",
         s.tags,
         s."upvotePower",
-        COALESCE(h."maxClients", s."playersCurrent", 0) AS record
+        COALESCE(st."maxPlayers30d", s."playersCurrent", 0) AS record
       FROM "Server" s
-      LEFT JOIN (
-        SELECT server_id, MAX(clients) AS "maxClients"
-        FROM "ServerHistory"
-        WHERE timestamp >= ${retentionCutoff}
-        GROUP BY server_id
-      ) h ON h.server_id = s.id
+      LEFT JOIN "ServerStats" st ON st.server_id = s.id
       WHERE ${whereClause}
       ORDER BY ${orderClause}
       LIMIT ${normalizedPageSize} OFFSET ${skip}
@@ -85,6 +89,7 @@ export async function getServerListPage({
     prisma.$queryRaw<[{ count: bigint }]>(Prisma.sql`
       SELECT COUNT(*) AS count
       FROM "Server" s
+      LEFT JOIN "ServerStats" st ON st.server_id = s.id
       WHERE ${whereClause}
     `),
   ]);

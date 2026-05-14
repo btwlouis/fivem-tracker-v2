@@ -49,9 +49,9 @@ export async function generateStaticParams(): Promise<Array<{ server: string }>>
       id: true,
     },
     where: {
-      server_history: {
-        some: {
-          timestamp: {
+      server_stats: {
+        is: {
+          lastSeen: {
             gte: getRetentionHistoryCutoffDate(),
           },
         },
@@ -67,15 +67,43 @@ export async function generateStaticParams(): Promise<Array<{ server: string }>>
 }
 
 function getIndexableServerWhere(serverId: string) {
+  const activityWhere =
+    process.env.NODE_ENV === "production"
+      ? {
+          server_stats: {
+            is: {
+              lastSeen: {
+                gte: getRetentionHistoryCutoffDate(),
+              },
+            },
+          },
+        }
+      : {
+          OR: [
+            {
+              server_stats: {
+                is: {
+                  lastSeen: {
+                    gte: getRetentionHistoryCutoffDate(),
+                  },
+                },
+              },
+            },
+            {
+              server_history: {
+                some: {
+                  timestamp: {
+                    gte: getRetentionHistoryCutoffDate(),
+                  },
+                },
+              },
+            },
+          ],
+        };
+
   return {
     id: serverId,
-    server_history: {
-      some: {
-        timestamp: {
-          gte: getRetentionHistoryCutoffDate(),
-        },
-      },
-    },
+    ...activityWhere,
   };
 }
 
@@ -254,15 +282,15 @@ export default async function ServerPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
-      <div className="container mx-auto flex min-h-full w-full flex-col gap-4 px-4 py-6">
-        <Card className="rounded-[1.75rem] border border-border/70 bg-card/85 shadow-xl backdrop-blur">
+      <div className="container mx-auto flex min-h-full w-full flex-col gap-3 px-4 py-4">
+        <Card className="rounded-[1.75rem] border border-border/70 bg-card/85 py-0 shadow-xl backdrop-blur">
           {serverData.bannerDetail ? (
             <Image
               src={serverData.bannerDetail}
               alt={`${projectName} Banner`}
               width={1865}
               height={220}
-              className="h-44 w-full object-cover"
+              className="block h-auto w-full object-contain"
               unoptimized
             />
           ) : null}
@@ -343,9 +371,9 @@ export default async function ServerPage({
           </CardContent>
         </Card>
 
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Card className="rounded-[1.5rem] border border-border/70 bg-card/85 shadow-sm">
-            <CardContent className="flex flex-col items-center px-5 py-5 text-center">
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <Card className="rounded-[1.5rem] border border-border/70 bg-card/85 py-0 shadow-sm">
+            <CardContent className="flex min-h-24 flex-col items-center justify-center px-4 py-4 text-center">
               <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 <Users className="h-3.5 w-3.5 shrink-0 text-primary" />
                 Live-Spieler
@@ -359,8 +387,8 @@ export default async function ServerPage({
             </CardContent>
           </Card>
 
-          <Card className="rounded-[1.5rem] border border-border/70 bg-card/85 shadow-sm">
-            <CardContent className="flex flex-col items-center px-5 py-5 text-center">
+          <Card className="rounded-[1.5rem] border border-border/70 bg-card/85 py-0 shadow-sm">
+            <CardContent className="flex min-h-24 flex-col items-center justify-center px-4 py-4 text-center">
               <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 <Globe className="h-3.5 w-3.5 shrink-0 text-primary" />
                 Region
@@ -369,8 +397,8 @@ export default async function ServerPage({
             </CardContent>
           </Card>
 
-          <Card className="rounded-[1.5rem] border border-border/70 bg-card/85 shadow-sm">
-            <CardContent className="flex flex-col items-center px-5 py-5 text-center">
+          <Card className="rounded-[1.5rem] border border-border/70 bg-card/85 py-0 shadow-sm">
+            <CardContent className="flex min-h-24 flex-col items-center justify-center px-4 py-4 text-center">
               <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 <Map className="h-3.5 w-3.5 shrink-0 text-primary" />
                 Map
@@ -381,8 +409,8 @@ export default async function ServerPage({
             </CardContent>
           </Card>
 
-          <Card className="rounded-[1.5rem] border border-border/70 bg-card/85 shadow-sm">
-            <CardContent className="flex flex-col items-center px-5 py-5 text-center">
+          <Card className="rounded-[1.5rem] border border-border/70 bg-card/85 py-0 shadow-sm">
+            <CardContent className="flex min-h-24 flex-col items-center justify-center px-4 py-4 text-center">
               <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 <Clock3 className="h-3.5 w-3.5 shrink-0 text-primary" />
                 Letztes Update
@@ -394,7 +422,7 @@ export default async function ServerPage({
           </Card>
         </section>
 
-        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
+        <section className="w-full">
           <Chart serverId={serverData.id} />
         </section>
 

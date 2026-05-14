@@ -16,6 +16,7 @@ model ServerHistory {
   server     Server   @relation(fields: [server_id], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "FK_server_history_servers")
 
   @@index([timestamp], map: "timestamp")
+  @@index([server_id, timestamp(sort: Desc)], map: "ServerHistory_server_id_timestamp_idx")
 }
 
 model Server {
@@ -66,8 +67,23 @@ model Server {
   created_at         DateTime        @default(now())
 
   server_history     ServerHistory[]
+  server_stats       ServerStats?
 
   @@index([localeCountry, playersCurrent])
   @@index([playersCurrent])
   @@index([updated_at])
+}
+
+model ServerStats {
+  server_id      String   @id
+  currentPlayers Int      @default(0)
+  maxPlayers30d  Int      @default(0)
+  lastSeen       DateTime
+  updatedAt      DateTime @updatedAt
+
+  server         Server   @relation(fields: [server_id], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "FK_server_stats_servers")
+
+  @@index([lastSeen])
+  @@index([currentPlayers])
+  @@index([maxPlayers30d])
 }

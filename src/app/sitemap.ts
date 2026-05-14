@@ -16,9 +16,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         updated_at: true,
       },
       where: {
-        server_history: {
-          some: {
-            timestamp: {
+        server_stats: {
+          is: {
+            lastSeen: {
               gte: historyCutoff,
             },
           },

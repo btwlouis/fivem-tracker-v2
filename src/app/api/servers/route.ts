@@ -20,9 +20,9 @@ export async function GET(request: NextRequest) {
       playersCurrent: {
         gt: 0,
       },
-      server_history: {
-        some: {
-          timestamp: {
+      server_stats: {
+        is: {
+          lastSeen: {
             gte: historyCutoff,
           },
         },

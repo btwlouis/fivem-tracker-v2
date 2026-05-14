@@ -101,6 +101,56 @@ export async function fetchServers(
 
 import { prisma } from "@/lib/prisma";
 import { getRetentionHistoryCutoffDate } from "@/lib/server-freshness";
+import { Prisma } from "@prisma/client";
+
+const WRITE_BATCH_SIZE = 500;
+const UPDATE_CONCURRENCY = 50;
+const HISTORY_DELETE_BATCH_SIZE = 5000;
+
+async function runWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T) => Promise<unknown>
+) {
+  let nextIndex = 0;
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    async () => {
+      while (nextIndex < items.length) {
+        const item = items[nextIndex++];
+        await worker(item);
+      }
+    }
+  );
+
+  await Promise.all(workers);
+}
+
+async function refreshServerStatsForIds(serverIds: string[], retentionCutoff: Date) {
+  if (serverIds.length === 0) return;
+
+  await prisma.$executeRaw(Prisma.sql`
+    INSERT INTO "ServerStats" (server_id, "currentPlayers", "maxPlayers30d", "lastSeen", "updatedAt")
+    SELECT
+      s.id,
+      COALESCE(s."playersCurrent", 0),
+      COALESCE(MAX(sh.clients), s."playersCurrent", 0),
+      COALESCE(MAX(sh.timestamp), s.updated_at),
+      CURRENT_TIMESTAMP
+    FROM "Server" s
+    LEFT JOIN "ServerHistory" sh
+      ON sh.server_id = s.id
+      AND sh.timestamp >= ${retentionCutoff}
+    WHERE s.id IN (${Prisma.join(serverIds)})
+    GROUP BY s.id
+    ON CONFLICT (server_id) DO UPDATE SET
+      "currentPlayers" = EXCLUDED."currentPlayers",
+      "maxPlayers30d" = EXCLUDED."maxPlayers30d",
+      "lastSeen" = EXCLUDED."lastSeen",
+      "updatedAt" = CURRENT_TIMESTAMP
+  `);
+}
 
 function sanitizeString(input: string): string {
   if (typeof input !== "string") return input;
@@ -246,9 +296,11 @@ export async function getServers() {
     });
 
     console.log(`Fetched ${servers.length} servers`);
-    servers.sort((a, b) => b.playersCurrent - a.playersCurrent).slice(0, 10000);
+    const sortedServers = servers
+      .sort((a, b) => b.playersCurrent - a.playersCurrent)
+      .slice(0, 10000);
 
-    const ids = servers.map((server) => server.id);
+    const ids = sortedServers.map((server) => server.id);
 
     const existingServers = await prisma.server.findMany({
       where: { id: { in: ids } },
@@ -259,17 +311,15 @@ export async function getServers() {
       existingServers.map((server: { id: string }) => server.id)
     );
 
-    const toUpdate = servers.filter((server) => existingIds.has(server.id));
-    const toCreate = servers.filter((server) => !existingIds.has(server.id));
-
-    const batchSize = 5000;
+    const toUpdate = sortedServers.filter((server) => existingIds.has(server.id));
+    const toCreate = sortedServers.filter((server) => !existingIds.has(server.id));
 
     const createBatches = [];
-    const updateBatches = [];
     const historyBatches = [];
+    const statsBatches = [];
 
-    for (let i = 0; i < toCreate.length; i += batchSize) {
-      const batch = toCreate.slice(i, i + batchSize);
+    for (let i = 0; i < toCreate.length; i += WRITE_BATCH_SIZE) {
+      const batch = toCreate.slice(i, i + WRITE_BATCH_SIZE);
 
       createBatches.push(
         prisma.server.createMany({ data: batch, skipDuplicates: true })
@@ -285,20 +335,12 @@ export async function getServers() {
           skipDuplicates: true,
         })
       );
+
+      statsBatches.push(batch.map((server) => server.id));
     }
 
-    for (let i = 0; i < toUpdate.length; i += batchSize) {
-      const batch = toUpdate.slice(i, i + batchSize);
-
-      // Avoid prisma.$transaction([...]) for better parallelization
-      updateBatches.push(
-        ...batch.map((server) =>
-          prisma.server.update({
-            where: { id: server.id },
-            data: server,
-          })
-        )
-      );
+    for (let i = 0; i < toUpdate.length; i += WRITE_BATCH_SIZE) {
+      const batch = toUpdate.slice(i, i + WRITE_BATCH_SIZE);
 
       historyBatches.push(
         prisma.serverHistory.createMany({
@@ -310,11 +352,24 @@ export async function getServers() {
           skipDuplicates: true,
         })
       );
+
+      statsBatches.push(batch.map((server) => server.id));
     }
     console.log(`To create: ${toCreate.length}, to update: ${toUpdate.length}`);
     await Promise.allSettled(createBatches);
-    await Promise.allSettled(updateBatches);
+
+    await runWithConcurrency(toUpdate, UPDATE_CONCURRENCY, (server) =>
+      prisma.server.update({
+        where: { id: server.id },
+        data: server,
+      })
+    );
+
     await Promise.allSettled(historyBatches);
+
+    for (const batchIds of statsBatches) {
+      await refreshServerStatsForIds(batchIds, getRetentionHistoryCutoffDate());
+    }
 
     const time = performance.now() - perf;
     console.log(`Fetched and saved servers in ${time}ms`);
@@ -325,21 +380,40 @@ export async function getServers() {
 
 export async function deleteOldServers() {
   const retentionCutoff = getRetentionHistoryCutoffDate();
+  let deletedHistoryRows = 0;
 
-  await prisma.serverHistory.deleteMany({
-    where: {
-      timestamp: {
-        lt: retentionCutoff,
-      },
-    },
-  });
+  while (true) {
+    const deleted = await prisma.$queryRaw<[{ count: bigint }]>(Prisma.sql`
+      WITH deleted_rows AS (
+        DELETE FROM "ServerHistory"
+        WHERE id IN (
+          SELECT id
+          FROM "ServerHistory"
+          WHERE timestamp < ${retentionCutoff}
+          ORDER BY timestamp ASC
+          LIMIT ${HISTORY_DELETE_BATCH_SIZE}
+        )
+        RETURNING 1
+      )
+      SELECT COUNT(*) AS count FROM deleted_rows
+    `);
+
+    const deletedCount = Number(deleted[0]?.count ?? 0);
+    deletedHistoryRows += deletedCount;
+
+    if (deletedCount < HISTORY_DELETE_BATCH_SIZE) {
+      break;
+    }
+  }
+
+  console.log(`Deleted ${deletedHistoryRows} old history rows`);
 
   const serversToDelete = await prisma.server.findMany({
     where: {
-      server_history: {
-        none: {
-          timestamp: {
-            gte: retentionCutoff,
+      server_stats: {
+        is: {
+          lastSeen: {
+            lt: retentionCutoff,
           },
         },
       },

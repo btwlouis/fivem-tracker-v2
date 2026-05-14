@@ -73,7 +73,7 @@ export default function RootLayout({
     <html
       lang="de"
       suppressHydrationWarning
-      className={cn(spaceGrotesk.variable, "h-full font-sans", roboto.variable)}
+      className={cn(spaceGrotesk.variable, "dark h-full font-sans", roboto.variable)}
     >
       <head>
         <link rel="preconnect" href="https://servers-frontend.fivem.net" />
@@ -82,10 +82,8 @@ export default function RootLayout({
       </head>
       <body className="flex h-dvh flex-col bg-background font-sans text-foreground antialiased">
         <ThemeProvider
-          attribute="class"
           defaultTheme="dark"
           enableSystem
-          disableTransitionOnChange
         >
           <I18nProvider>
             <HeaderShell />

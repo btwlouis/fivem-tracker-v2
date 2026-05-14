@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Area, AreaChart, CartesianGrid, Line, ReferenceLine, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from "recharts";
 import { Activity, Sparkles, TrendingUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -35,22 +35,7 @@ const timeRanges = ["1h", "1d", "7d", "1m"] as const;
 type TimeRange = (typeof timeRanges)[number];
 
 function convertToChartData(rawData: ServerHistory[], range: TimeRange) {
-  const filteredData = rawData.filter((item) => {
-    const diffTime = Date.now() - new Date(item.timestamp).getTime();
-
-    switch (range) {
-      case "1h":
-        return diffTime <= 60 * 60 * 1000;
-      case "1d":
-        return diffTime <= 24 * 60 * 60 * 1000;
-      case "7d":
-        return diffTime <= 7 * 24 * 60 * 60 * 1000;
-      case "1m":
-        return diffTime <= 30 * 24 * 60 * 60 * 1000;
-    }
-  });
-
-  return filteredData
+  return rawData
     .map((item) => {
       const date = new Date(item.timestamp);
 
@@ -88,51 +73,49 @@ export function Chart({ serverId }: { serverId: string }) {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await fetch(`/api/server-history/${serverId}`, {
-        cache: "no-store",
-      });
+      const response = await fetch(`/api/server-history/${serverId}?range=${range}`);
 
       const data: ServerHistory[] = await response.json();
       setRawData(data);
     };
 
     fetchData();
-  }, [serverId]);
+  }, [range, serverId]);
 
   return (
-    <Card className="rounded-[1.75rem] border border-border/70 bg-card/85 shadow-xl backdrop-blur">
-      <CardHeader className="gap-4 border-b border-border/60 bg-muted/20">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <Card className="w-full rounded-[1.75rem] border border-border/70 bg-card/85 py-0 shadow-xl backdrop-blur">
+      <CardHeader className="gap-3 border-b border-border/60 bg-muted/20 px-5 py-4 sm:px-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-primary" />
               Spielerverlauf
             </CardTitle>
-            <CardDescription className="mt-2 max-w-2xl">
+            <CardDescription className="mt-1 max-w-2xl">
               Zeitverlauf der Spielerzahlen für diesen Server mit direkter, indexierbarer Darstellung.
             </CardDescription>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-border/70 bg-background/70 px-4 py-3">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="rounded-xl border border-border/70 bg-background/70 px-4 py-2.5">
               <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
                 <TrendingUp className="h-3.5 w-3.5 text-primary" />
                 Höchstwert
               </div>
-              <p className="mt-2 text-xl font-semibold">{peakPlayers}</p>
+              <p className="mt-1 text-xl font-semibold">{peakPlayers}</p>
             </div>
-            <div className="rounded-2xl border border-border/70 bg-background/70 px-4 py-3">
+            <div className="rounded-xl border border-border/70 bg-background/70 px-4 py-2.5">
               <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
                 <Sparkles className="h-3.5 w-3.5 text-primary" />
                 Aktuell
               </div>
-              <p className="mt-2 text-xl font-semibold">{latestPlayers}</p>
+              <p className="mt-1 text-xl font-semibold">{latestPlayers}</p>
             </div>
           </div>
         </div>
       </CardHeader>
 
-      <CardFooter className="flex-col items-start gap-3 border-b border-border/60 bg-background/40 text-sm">
+      <CardFooter className="flex-col items-start gap-3 border-b border-border/60 bg-background/40 px-5 py-3 text-sm sm:px-6">
         <div className="flex flex-wrap gap-2">
           {timeRanges.map((item) => (
             <Button
@@ -147,10 +130,10 @@ export function Chart({ serverId }: { serverId: string }) {
         </div>
       </CardFooter>
 
-      <CardContent className="p-4 sm:p-6">
+      <CardContent className="p-4 sm:p-5">
         <ChartContainer
           config={chartConfig}
-          className="h-[360px] w-full max-w-none [&_.recharts-cartesian-grid_line]:stroke-border/70 [&_.recharts-curve.recharts-reference-line-line]:stroke-muted-foreground/40 [&_.recharts-text]:fill-muted-foreground"
+          className="h-[380px] w-full max-w-none [&_.recharts-cartesian-grid_line]:stroke-border/70 [&_.recharts-curve.recharts-reference-line-line]:stroke-muted-foreground/40 [&_.recharts-text]:fill-muted-foreground"
         >
           <AreaChart
             accessibilityLayer

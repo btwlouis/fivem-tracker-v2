@@ -21,9 +21,9 @@ function getActiveWhere() {
     playersCurrent: {
       gt: 0,
     },
-    server_history: {
-      some: {
-        timestamp: {
+    server_stats: {
+      is: {
+        lastSeen: {
           gte: getVisibleHistoryCutoffDate(),
         },
       },
@@ -51,14 +51,13 @@ async function getHomepageData() {
       pageSize: 30,
       sort: "players",
     }),
-    prisma.server.aggregate({
-      where,
-      _count: {
-        id: true,
+    prisma.serverStats.aggregate({
+      where: {
+        currentPlayers: { gt: 0 },
+        lastSeen: { gte: getVisibleHistoryCutoffDate() },
       },
-      _sum: {
-        playersCurrent: true,
-      },
+      _count: { server_id: true },
+      _sum: { currentPlayers: true },
     }),
     prisma.server.findMany({
       where,
@@ -73,8 +72,8 @@ async function getHomepageData() {
   return {
     featuredServers: initialServerData.servers.slice(0, 6),
     initialServerData,
-    totalServers: initialServerData.totalCount || stats._count.id,
-    totalPlayers: stats._sum.playersCurrent || 0,
+    totalServers: initialServerData.totalCount || stats._count.server_id,
+    totalPlayers: stats._sum.currentPlayers || 0,
     countries: countries.map((country) => country.localeCountry).filter(Boolean),
   };
 }
@@ -102,7 +101,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const { featuredServers, initialServerData, totalPlayers, totalServers } = await getHomepageData();
+  const { featuredServers, initialServerData } = await getHomepageData();
 
   const websiteJsonLd = {
     "@context": "https://schema.org",
