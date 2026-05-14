@@ -34,17 +34,13 @@ export async function getServerListPage({
       lastSeen: { gte: historyCutoff },
     },
   });
-  const useHistoryFallback =
-    activeSummaryCount === 0 && process.env.NODE_ENV !== "production";
+  const useSummary = activeSummaryCount > 0;
 
   const conditions: Prisma.Sql[] = [
     Prisma.sql`s."playersCurrent" > 0`,
-    useHistoryFallback
-      ? Prisma.sql`EXISTS (
-          SELECT 1 FROM "ServerHistory" sh2
-          WHERE sh2.server_id = s.id AND sh2.timestamp >= ${historyCutoff}
-        )`
-      : Prisma.sql`st."lastSeen" >= ${historyCutoff}`,
+    useSummary
+      ? Prisma.sql`st."lastSeen" >= ${historyCutoff}`
+      : Prisma.sql`s.updated_at >= ${historyCutoff}`,
   ];
 
   if (locale) {

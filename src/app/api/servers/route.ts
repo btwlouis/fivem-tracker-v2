@@ -11,6 +11,28 @@ export async function GET(request: NextRequest) {
   const limit = 50;
   const offset = (pageNumber - 1) * limit;
   const historyCutoff = getVisibleHistoryCutoffDate();
+  const activeSummaryCount = await prisma.serverStats.count({
+    where: {
+      currentPlayers: { gt: 0 },
+      lastSeen: { gte: historyCutoff },
+    },
+  });
+  const activityWhere =
+    activeSummaryCount > 0
+      ? {
+          server_stats: {
+            is: {
+              lastSeen: {
+                gte: historyCutoff,
+              },
+            },
+          },
+        }
+      : {
+          updated_at: {
+            gte: historyCutoff,
+          },
+        };
 
   const servers = await prisma.server.findMany({
     take: limit,
@@ -20,13 +42,7 @@ export async function GET(request: NextRequest) {
       playersCurrent: {
         gt: 0,
       },
-      server_stats: {
-        is: {
-          lastSeen: {
-            gte: historyCutoff,
-          },
-        },
-      },
+      ...activityWhere,
     },
     orderBy: {
       playersCurrent: "desc",

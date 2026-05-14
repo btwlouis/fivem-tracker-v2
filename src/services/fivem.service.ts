@@ -127,27 +127,30 @@ async function runWithConcurrency<T>(
   await Promise.all(workers);
 }
 
-async function refreshServerStatsForIds(serverIds: string[], retentionCutoff: Date) {
-  if (serverIds.length === 0) return;
+async function refreshServerStatsForServers(servers: ServerData[], timestamp: Date) {
+  if (servers.length === 0) return;
+
+  const values = Prisma.join(
+    servers.map((server) =>
+      Prisma.sql`(${server.id}, ${server.playersCurrent ?? 0}, ${timestamp})`
+    )
+  );
 
   await prisma.$executeRaw(Prisma.sql`
     INSERT INTO "ServerStats" (server_id, "currentPlayers", "maxPlayers30d", "lastSeen", "updatedAt")
     SELECT
-      s.id,
-      COALESCE(s."playersCurrent", 0),
-      COALESCE(MAX(sh.clients), s."playersCurrent", 0),
-      COALESCE(MAX(sh.timestamp), s.updated_at),
+      incoming.server_id,
+      incoming.current_players,
+      incoming.current_players,
+      incoming.last_seen,
       CURRENT_TIMESTAMP
-    FROM "Server" s
-    LEFT JOIN "ServerHistory" sh
-      ON sh.server_id = s.id
-      AND sh.timestamp >= ${retentionCutoff}
-    WHERE s.id IN (${Prisma.join(serverIds)})
-    GROUP BY s.id
+    FROM (
+      VALUES ${values}
+    ) AS incoming(server_id, current_players, last_seen)
     ON CONFLICT (server_id) DO UPDATE SET
       "currentPlayers" = EXCLUDED."currentPlayers",
-      "maxPlayers30d" = EXCLUDED."maxPlayers30d",
-      "lastSeen" = EXCLUDED."lastSeen",
+      "maxPlayers30d" = GREATEST("ServerStats"."maxPlayers30d", EXCLUDED."maxPlayers30d"),
+      "lastSeen" = GREATEST("ServerStats"."lastSeen", EXCLUDED."lastSeen"),
       "updatedAt" = CURRENT_TIMESTAMP
   `);
 }
@@ -336,7 +339,7 @@ export async function getServers() {
         })
       );
 
-      statsBatches.push(batch.map((server) => server.id));
+      statsBatches.push(batch);
     }
 
     for (let i = 0; i < toUpdate.length; i += WRITE_BATCH_SIZE) {
@@ -353,7 +356,7 @@ export async function getServers() {
         })
       );
 
-      statsBatches.push(batch.map((server) => server.id));
+      statsBatches.push(batch);
     }
     console.log(`To create: ${toCreate.length}, to update: ${toUpdate.length}`);
     await Promise.allSettled(createBatches);
@@ -367,8 +370,8 @@ export async function getServers() {
 
     await Promise.allSettled(historyBatches);
 
-    for (const batchIds of statsBatches) {
-      await refreshServerStatsForIds(batchIds, getRetentionHistoryCutoffDate());
+    for (const batch of statsBatches) {
+      await refreshServerStatsForServers(batch, timestamp);
     }
 
     const time = performance.now() - perf;

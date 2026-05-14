@@ -16,18 +16,36 @@ type HomepageServer = {
   localeCountry: string;
 };
 
-function getActiveWhere() {
+async function getActiveWhere() {
+  const cutoff = getVisibleHistoryCutoffDate();
+  const activeSummaryCount = await prisma.serverStats.count({
+    where: {
+      currentPlayers: { gt: 0 },
+      lastSeen: { gte: cutoff },
+    },
+  });
+  const activityWhere =
+    activeSummaryCount > 0
+      ? {
+          server_stats: {
+            is: {
+              lastSeen: {
+                gte: cutoff,
+              },
+            },
+          },
+        }
+      : {
+          updated_at: {
+            gte: cutoff,
+          },
+        };
+
   return {
     playersCurrent: {
       gt: 0,
     },
-    server_stats: {
-      is: {
-        lastSeen: {
-          gte: getVisibleHistoryCutoffDate(),
-        },
-      },
-    },
+    ...activityWhere,
   };
 }
 
@@ -43,7 +61,7 @@ function getServerDescription(server: HomepageServer) {
 }
 
 async function getHomepageData() {
-  const where = getActiveWhere();
+  const where = await getActiveWhere();
 
   const [initialServerData, stats, countries] = await Promise.all([
     getServerListPage({
@@ -139,7 +157,7 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
       />
 
-      <div className="container mx-auto flex h-full min-h-0 w-full flex-col gap-5 px-4 py-6">
+      <div className="container mx-auto flex h-full min-h-0 w-full flex-col gap-2 px-2 py-2 sm:gap-5 sm:px-4 sm:py-6">
         <section className="flex min-h-0 flex-1 w-full">
           <ServerList initialData={initialServerData} />
         </section>

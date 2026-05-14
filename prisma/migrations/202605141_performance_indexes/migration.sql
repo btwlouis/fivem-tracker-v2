@@ -23,18 +23,10 @@ INSERT INTO "ServerStats" (server_id, "currentPlayers", "maxPlayers30d", "lastSe
 SELECT
   s.id,
   COALESCE(s."playersCurrent", 0),
-  COALESCE(h."maxPlayers30d", s."playersCurrent", 0),
-  COALESCE(MAX(sh.timestamp), s.updated_at),
+  COALESCE(s."playersCurrent", 0),
+  s.updated_at,
   CURRENT_TIMESTAMP
 FROM "Server" s
-LEFT JOIN "ServerHistory" sh ON sh.server_id = s.id
-LEFT JOIN (
-  SELECT server_id, MAX(clients) AS "maxPlayers30d"
-  FROM "ServerHistory"
-  WHERE timestamp >= NOW() - INTERVAL '30 days'
-  GROUP BY server_id
-) h ON h.server_id = s.id
-GROUP BY s.id, h."maxPlayers30d"
 ON CONFLICT (server_id) DO UPDATE SET
   "currentPlayers" = EXCLUDED."currentPlayers",
   "maxPlayers30d" = GREATEST("ServerStats"."maxPlayers30d", EXCLUDED."maxPlayers30d"),

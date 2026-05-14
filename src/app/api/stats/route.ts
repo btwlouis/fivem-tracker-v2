@@ -27,18 +27,10 @@ const fetchStats = unstable_cache(
       };
     }
 
-    if (process.env.NODE_ENV === "production") {
-      return {
-        totalPlayers: 0,
-        totalServers: 0,
-        totalRecord: 0,
-      };
-    }
-
     const serverStats = await prisma.server.aggregate({
       where: {
         playersCurrent: { gt: 0 },
-        server_history: { some: { timestamp: { gte: historyCutoff } } },
+        updated_at: { gte: historyCutoff },
       },
       _count: { id: true },
       _sum: { playersCurrent: true },

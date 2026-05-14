@@ -44,18 +44,36 @@ export const revalidate = 300;
 export const dynamicParams = true;
 
 export async function generateStaticParams(): Promise<Array<{ server: string }>> {
+  const cutoff = getRetentionHistoryCutoffDate();
+  const activeSummaryCount = await prisma.serverStats.count({
+    where: {
+      currentPlayers: { gt: 0 },
+      lastSeen: { gte: cutoff },
+    },
+  });
+  const activityWhere =
+    activeSummaryCount > 0
+      ? {
+          server_stats: {
+            is: {
+              lastSeen: {
+                gte: cutoff,
+              },
+            },
+          },
+        }
+      : {
+          updated_at: {
+            gte: cutoff,
+          },
+        };
+
   const servers = await prisma.server.findMany({
     select: {
       id: true,
     },
     where: {
-      server_stats: {
-        is: {
-          lastSeen: {
-            gte: getRetentionHistoryCutoffDate(),
-          },
-        },
-      },
+      ...activityWhere,
     },
     orderBy: {
       updated_at: "desc",
@@ -67,43 +85,24 @@ export async function generateStaticParams(): Promise<Array<{ server: string }>>
 }
 
 function getIndexableServerWhere(serverId: string) {
-  const activityWhere =
-    process.env.NODE_ENV === "production"
-      ? {
-          server_stats: {
-            is: {
-              lastSeen: {
-                gte: getRetentionHistoryCutoffDate(),
-              },
-            },
-          },
-        }
-      : {
-          OR: [
-            {
-              server_stats: {
-                is: {
-                  lastSeen: {
-                    gte: getRetentionHistoryCutoffDate(),
-                  },
-                },
-              },
-            },
-            {
-              server_history: {
-                some: {
-                  timestamp: {
-                    gte: getRetentionHistoryCutoffDate(),
-                  },
-                },
-              },
-            },
-          ],
-        };
-
   return {
     id: serverId,
-    ...activityWhere,
+    OR: [
+      {
+        server_stats: {
+          is: {
+            lastSeen: {
+              gte: getRetentionHistoryCutoffDate(),
+            },
+          },
+        },
+      },
+      {
+        updated_at: {
+          gte: getRetentionHistoryCutoffDate(),
+        },
+      },
+    ],
   };
 }
 
@@ -283,7 +282,10 @@ export default async function ServerPage({
       />
 
       <div className="container mx-auto flex min-h-full w-full flex-col gap-3 px-4 py-4">
-        <Card className="rounded-[1.75rem] border border-border/70 bg-card/85 py-0 shadow-xl backdrop-blur">
+        <Card
+          className="rounded-[1.75rem] border border-border/70 bg-card/85 py-0 shadow-xl backdrop-blur"
+          style={{ minHeight: 260 }}
+        >
           <div className="relative overflow-hidden" style={{ minHeight: 260 }}>
             {serverData.bannerDetail ? (
               <Image

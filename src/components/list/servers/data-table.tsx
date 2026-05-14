@@ -79,17 +79,17 @@ export function DataTable<TData, TValue>({
   };
 
   return (
-    <Card className="grid h-full min-h-0 w-full max-w-none flex-1 grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-[1.75rem] border-border/70 bg-card/85 py-0 shadow-xl backdrop-blur">
+    <Card className="grid h-full min-h-[calc(100dvh-var(--header-height,53px)-1rem)] w-full max-w-none flex-1 grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-xl border-border/70 bg-card/85 py-0 shadow-xl backdrop-blur sm:min-h-0 sm:rounded-[1.75rem]">
       {/* toolbar */}
-      <div className="shrink-0 border-b border-border/60 bg-muted/20 px-4 py-3">
+      <div className="shrink-0 border-b border-border/60 bg-muted/20 px-3 py-2 sm:px-4 sm:py-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-1 rounded-full border border-border/70 bg-background/75 p-1">
+          <div className="flex w-full items-center gap-1 rounded-full border border-border/70 bg-background/75 p-1 sm:w-auto">
             {SORT_OPTIONS.map(({ key, Icon }) => (
               <Button
                 key={key}
                 variant={sortBy === key ? "default" : "ghost"}
                 size="sm"
-                className="h-8 rounded-full px-3 text-xs"
+                className="h-8 flex-1 rounded-full px-2 text-xs sm:flex-none sm:px-3"
                 onClick={() => onSortChange?.(key)}
               >
                 <Icon className="h-3.5 w-3.5" />
@@ -98,7 +98,7 @@ export function DataTable<TData, TValue>({
             ))}
           </div>
 
-          <div className="relative w-full max-w-sm">
+          <div className="relative w-full sm:max-w-sm">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder={t("table.searchPlaceholder")}
@@ -170,7 +170,7 @@ export function DataTable<TData, TValue>({
                     data-state={row.getIsSelected() ? "selected" : undefined}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="px-2 py-2.5">
+                      <TableCell key={cell.id} className="px-2 py-2 sm:py-2.5">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
@@ -199,7 +199,7 @@ export function DataTable<TData, TValue>({
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/60 px-3 py-2 text-xs text-muted-foreground sm:px-4 sm:py-3">
           <span>{t("table.showing", { loaded: data.length, total: totalCount })}</span>
           <span>{hasMore ? "" : t("table.allLoaded")}</span>
         </div>

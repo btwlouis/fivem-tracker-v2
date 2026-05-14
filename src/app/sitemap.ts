@@ -9,6 +9,28 @@ export const dynamic = "force-dynamic";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const historyCutoff = getRetentionHistoryCutoffDate();
+    const activeSummaryCount = await prisma.serverStats.count({
+      where: {
+        currentPlayers: { gt: 0 },
+        lastSeen: { gte: historyCutoff },
+      },
+    });
+    const activityWhere =
+      activeSummaryCount > 0
+        ? {
+            server_stats: {
+              is: {
+                lastSeen: {
+                  gte: historyCutoff,
+                },
+              },
+            },
+          }
+        : {
+            updated_at: {
+              gte: historyCutoff,
+            },
+          };
 
     const servers = await prisma.server.findMany({
       select: {
@@ -16,13 +38,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         updated_at: true,
       },
       where: {
-        server_stats: {
-          is: {
-            lastSeen: {
-              gte: historyCutoff,
-            },
-          },
-        },
+        ...activityWhere,
       },
       orderBy: {
         updated_at: "desc",
