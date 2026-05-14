@@ -284,18 +284,23 @@ export default async function ServerPage({
 
       <div className="container mx-auto flex min-h-full w-full flex-col gap-3 px-4 py-4">
         <Card className="rounded-[1.75rem] border border-border/70 bg-card/85 py-0 shadow-xl backdrop-blur">
-          {serverData.bannerDetail ? (
-            <Image
-              src={serverData.bannerDetail}
-              alt={`${projectName} Banner`}
-              width={1865}
-              height={220}
-              className="block h-auto w-full object-contain"
-              unoptimized
-            />
-          ) : null}
-
-          <CardContent className="flex flex-col gap-5 px-6 py-6">
+          <div className="relative overflow-hidden" style={{ minHeight: 260 }}>
+            {serverData.bannerDetail ? (
+              <Image
+                src={serverData.bannerDetail}
+                alt={`${projectName} Banner`}
+                fill
+                sizes="(min-width: 1280px) 1280px, 100vw"
+                className="object-cover"
+                priority
+                unoptimized
+              />
+            ) : null}
+            <div className="absolute inset-0 bg-gradient-to-b from-background/35 via-background/70 to-card" />
+            <CardContent
+              className="relative z-10 flex flex-col justify-end gap-5 px-5 py-5 sm:px-6 sm:py-6"
+              style={{ minHeight: 260 }}
+            >
             <Link
               href="/"
               className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -368,7 +373,8 @@ export default async function ServerPage({
                 </Badge>
               ))}
             </div>
-          </CardContent>
+            </CardContent>
+          </div>
         </Card>
 
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
