@@ -5,7 +5,7 @@ import { FrameReader } from "../utils/frameReader";
 import { masterListServerData2ServerView } from "../utils/transformers";
 import { IServerView } from "../utils/types";
 
-const BASE_URL = "https://servers-frontend.fivem.net/api/servers";
+const BASE_URL = "https://frontend.cfx-services.net/api/servers";
 const ALL_SERVERS_URL = `${BASE_URL}/streamRedir/`;
 
 export enum GameName {
