@@ -1,0 +1,137 @@
+{
+  "stats": {
+    "playersOnline": "Joueurs en ligne",
+    "record": "Record historique",
+    "servers": "Serveurs actifs"
+  },
+  "sort": {
+    "label": "Tri",
+    "players": "Joueurs",
+    "upvotes": "Votes",
+    "record": "Record"
+  },
+  "countryFilter": {
+    "label": "Filtrer par pays",
+    "all": "Tous les pays",
+    "searchPlaceholder": "Rechercher un pays..."
+  },
+  "table": {
+    "searchPlaceholder": "Rechercher des serveurs...",
+    "rank": "#",
+    "server": "Serveur",
+    "tags": "Tags",
+    "record": "Record",
+    "country": "Pays",
+    "players": "Joueurs",
+    "serverIcon": "Icône du serveur",
+    "noDescription": "Aucune description",
+    "noResults": "Aucun serveur trouvé.",
+    "showing": "{{loaded}} sur {{total}} serveurs",
+    "allLoaded": "Tous les serveurs sont chargés",
+    "loadingMore": "Chargement de serveurs supplémentaires...",
+    "retry": "Réessayer",
+    "errorLoading": "Impossible de charger les serveurs"
+  },
+  "serverPage": {
+    "notFoundTitle": "Serveur introuvable",
+    "metaTitle": "{{name}} serveur FiveM",
+    "metaDescription": "{{name}} est un serveur {{type}} listé en {{country}} avec {{current}} sur {{max}} slots actuellement occupés.",
+    "metaPeak": "Le pic sur 30 jours est de {{peak}} joueurs.",
+    "bannerAlt": "Bannière du serveur FiveM {{name}}",
+    "fallbackDescription": "{{name}} est actuellement listé dans FiveM Tracker.",
+    "relatedJsonLdName": "Serveurs FiveM similaires à {{name}}",
+    "unknown": "Inconnu",
+    "backToList": "Retour à la liste des serveurs",
+    "openServer": "Ouvrir le serveur",
+    "badges": {
+      "private": "Privé",
+      "public": "Public",
+      "active": "Actif",
+      "lastActive": "Dernière activité"
+    },
+    "relative": {
+      "lessThanHour": "il y a moins d'une heure",
+      "hoursAgo": "il y a {{count}} heures",
+      "daysAgo": "il y a {{count}} jours"
+    },
+    "stats": {
+      "livePlayers": "Joueurs en direct",
+      "region": "Région",
+      "map": "Carte",
+      "lastUpdate": "Dernière mise à jour"
+    },
+    "activitySummary": "{{name}} a atteint un pic de {{peak}} joueurs au cours des 30 derniers jours. En moyenne, {{average}} joueurs ont été enregistrés par mesure, sur la base de {{samples}} mesures stockées.",
+    "activitySummaryEmpty": "Il n'y a pas encore assez de points d'historique stockés pour {{name}}. Cette page sera enrichie automatiquement avec les prochaines importations cron.",
+    "analysis": {
+      "title": "Analyse du serveur sur 30 jours",
+      "description": "Le tracker analyse les nombres de joueurs enregistrés, la région, les tags, les informations de carte et les mises à jour afin que les joueurs puissent déterminer plus vite si {{name}} correspond à leur recherche. Ces valeurs sont mises à jour automatiquement et rendent le profil plus distinct qu'une simple liste de serveurs."
+    },
+    "historyNumbers": {
+      "title": "Historique en chiffres",
+      "peak": "Pic sur 30 jours",
+      "average": "Moyenne",
+      "samples": "Mesures",
+      "peakTime": "Moment du pic"
+    },
+    "profile": {
+      "title": "Profil du serveur",
+      "description": "Champs structurés qui donnent du contexte aux joueurs et aux moteurs de recherche.",
+      "game": "Jeu",
+      "serverId": "ID serveur",
+      "joinId": "ID de connexion"
+    },
+    "technical": {
+      "title": "Détails techniques",
+      "description": "Métadonnées pour l'analyse, l'attribution et la comparaison des serveurs.",
+      "software": "Logiciel serveur",
+      "language": "Langue",
+      "historicalAddress": "Adresse historique",
+      "supportStatus": "Statut du support",
+      "ownerProfile": "Profil propriétaire",
+      "openProfile": "Ouvrir le profil",
+      "connectEndpoints": "Endpoints de connexion"
+    },
+    "values": {
+      "allowed": "Autorisé",
+      "notAllowed": "Non autorisé",
+      "active": "Actif",
+      "disabled": "Désactivé",
+      "noPremium": "Pas de premium",
+      "standard": "Standard"
+    },
+    "faqTitle": "Questions fréquentes sur {{name}}",
+    "faqDescription": "Réponses courtes basées sur les données live et historiques disponibles.",
+    "faq": {
+      "currentPlayers": {
+        "question": "Combien de joueurs sont actuellement sur {{name}} ?",
+        "answer": "{{current}} sur {{max}} slots sont actuellement occupés sur {{name}}."
+      },
+      "record": {
+        "question": "Quel record de joueurs {{name}} a-t-il dans le tracker ?",
+        "answer": "La valeur la plus élevée mesurée au cours des 30 derniers jours est de {{peak}} joueurs{{date}}.",
+        "dateSuffix": ", mesurée le {{date}}",
+        "empty": "Aucun record fiable sur 30 jours n'a encore été calculé pour {{name}}."
+      },
+      "country": {
+        "question": "De quel pays vient {{name}} ?",
+        "answer": "{{name}} est associé à la région {{country}} dans le tracker."
+      },
+      "join": {
+        "question": "Comment rejoindre {{name}} ?",
+        "answer": "Vous pouvez ouvrir {{name}} avec l'ID de connexion {{joinId}} ou le lien de connexion FiveM sur cette page.",
+        "empty": "Aucun ID de connexion n'est actuellement enregistré pour {{name}}."
+      }
+    },
+    "related": {
+      "title": "Serveurs FiveM similaires",
+      "description": "Autres serveurs actifs de la même région ou avec un mode de jeu similaire.",
+      "empty": "Aucun serveur similaire trouvé pour le moment."
+    }
+  },
+  "nav": {
+    "title": "FiveM Tracker",
+    "subtitle": "Liste live de serveurs FiveM pour roleplay, city et RP",
+    "toggleTheme": "Changer de thème",
+    "language": "Langue"
+  }
+}

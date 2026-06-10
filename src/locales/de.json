@@ -131,6 +131,7 @@
   "nav": {
     "title": "FiveM Tracker",
     "subtitle": "Live FiveM Serverliste fuer Roleplay, City- und RP-Server",
-    "toggleTheme": "Theme wechseln"
+    "toggleTheme": "Theme wechseln",
+    "language": "Sprache"
   }
 }

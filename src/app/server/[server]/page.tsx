@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { Prisma } from "@prisma/client";
+import { CircleFlag } from "react-circle-flags";
 
 import { Chart } from "./_components/chart";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +47,9 @@ import {
 } from "@/lib/utils";
 import de from "@/locales/de.json";
 import en from "@/locales/en.json";
+import es from "@/locales/es.json";
+import fr from "@/locales/fr.json";
+import it from "@/locales/it.json";
 
 export const revalidate = 300;
 export const dynamicParams = true;
@@ -71,14 +75,19 @@ type RelatedServer = {
   iconVersion: number | null;
 };
 
-type Locale = "de" | "en";
+type Locale = "de" | "en" | "es" | "fr" | "it";
 
-const translations = { de, en } as const;
+const translations = { de, en, es, fr, it } as const;
+const supportedLocales = ["de", "en", "es", "fr", "it"] as const;
+
+function isSupportedLocale(value: string | undefined): value is Locale {
+  return supportedLocales.includes(value as Locale);
+}
 
 async function getRequestLocale(): Promise<Locale> {
   const store = await cookies();
   const locale = store.get("locale")?.value;
-  return locale === "en" ? "en" : "de";
+  return isSupportedLocale(locale) ? locale : "de";
 }
 
 function resolveTranslation(obj: Record<string, unknown>, path: string): string {
@@ -102,11 +111,49 @@ function createTranslator(locale: Locale) {
 }
 
 function getIntlLocale(locale: Locale) {
-  return locale === "de" ? "de-DE" : "en-US";
+  const localeMap: Record<Locale, string> = {
+    de: "de-DE",
+    en: "en-US",
+    es: "es-ES",
+    fr: "fr-FR",
+    it: "it-IT",
+  };
+
+  return localeMap[locale];
 }
 
 function getSchemaLanguage(locale: Locale) {
-  return locale === "de" ? "de-DE" : "en-US";
+  return getIntlLocale(locale);
+}
+
+function isFlagCode(code?: string | null) {
+  return Boolean(code && /^[a-z]{2}$/i.test(code));
+}
+
+function CountryWithIcon({
+  code,
+  size = 16,
+  className = "",
+}: {
+  code: string;
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 ${className}`}>
+      {isFlagCode(code) ? (
+        <CircleFlag
+          countryCode={code.toLowerCase()}
+          height={size}
+          width={size}
+          className="shrink-0"
+        />
+      ) : (
+        <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
+      )}
+      <span>{code}</span>
+    </span>
+  );
 }
 
 export async function generateStaticParams(): Promise<Array<{ server: string }>> {
@@ -635,7 +682,9 @@ export default async function ServerPage({
 
                 <div className="min-w-0 space-y-3">
                   <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary">{serverData.localeCountry}</Badge>
+                    <Badge variant="secondary">
+                      <CountryWithIcon code={serverData.localeCountry} />
+                    </Badge>
                     <Badge variant="secondary">
                       {serverData.private
                         ? t("serverPage.badges.private")
@@ -710,7 +759,9 @@ export default async function ServerPage({
                 <Globe className="h-3.5 w-3.5 shrink-0 text-primary" />
                 {t("serverPage.stats.region")}
               </div>
-              <p className="mt-2 text-2xl font-semibold">{serverData.localeCountry}</p>
+              <p className="mt-2 flex items-center justify-center text-2xl font-semibold">
+                <CountryWithIcon code={serverData.localeCountry} size={22} />
+              </p>
             </CardContent>
           </Card>
 
@@ -972,7 +1023,7 @@ export default async function ServerPage({
                             {relatedName}
                           </h3>
                           <span className="shrink-0 text-xs text-muted-foreground">
-                            {relatedServer.localeCountry}
+                            <CountryWithIcon code={relatedServer.localeCountry} size={14} />
                           </span>
                         </div>
                         <p className="mt-0.5 truncate text-xs text-muted-foreground">

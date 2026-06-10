@@ -1,12 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Moon, Sun, Users, Trophy, Server } from "lucide-react";
+import { Check, ChevronDown, Moon, Sun, Users, Trophy, Server } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { CircleFlag } from "react-circle-flags";
 
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCompactNumber } from "@/lib/utils";
 import { useTranslation, type Locale } from "@/lib/i18n";
@@ -17,6 +24,18 @@ type Stats = {
   totalRecord: number;
   totalServers: number;
 };
+
+const LANGUAGE_OPTIONS: Array<{
+  locale: Locale;
+  label: string;
+  countryCode: string;
+}> = [
+  { locale: "de", label: "Deutsch", countryCode: "de" },
+  { locale: "en", label: "English", countryCode: "gb" },
+  { locale: "es", label: "Español", countryCode: "es" },
+  { locale: "it", label: "Italiano", countryCode: "it" },
+  { locale: "fr", label: "Français", countryCode: "fr" },
+];
 
 function StatPill({
   label,
@@ -84,7 +103,8 @@ export default function Header() {
       .catch(() => {});
   }, []);
 
-  const otherLocale: Locale = locale === "de" ? "en" : "de";
+  const activeLanguage =
+    LANGUAGE_OPTIONS.find((option) => option.locale === locale) || LANGUAGE_OPTIONS[0];
 
   return (
     <header
@@ -133,20 +153,46 @@ export default function Header() {
           </div>
 
           <div className="ml-auto flex shrink-0 items-center gap-1 rounded-full border border-border/70 bg-card/80 p-1 shadow-xs backdrop-blur">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
-              onClick={() => setLocale(otherLocale)}
-            >
-              <CircleFlag
-                countryCode={locale === "de" ? "de" : "gb"}
-                height={14}
-                width={14}
-                className="shrink-0"
-              />
-              {locale.toUpperCase()}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1.5 rounded-full px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground sm:px-3"
+                  aria-label={t("nav.language")}
+                >
+                  <CircleFlag
+                    countryCode={activeLanguage.countryCode}
+                    height={14}
+                    width={14}
+                    className="shrink-0"
+                  />
+                  <span className="hidden sm:inline">{locale.toUpperCase()}</span>
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuLabel>{t("nav.language")}</DropdownMenuLabel>
+                {LANGUAGE_OPTIONS.map((option) => (
+                  <DropdownMenuItem
+                    key={option.locale}
+                    className="cursor-pointer"
+                    onClick={() => setLocale(option.locale)}
+                  >
+                    <CircleFlag
+                      countryCode={option.countryCode}
+                      height={16}
+                      width={16}
+                      className="shrink-0"
+                    />
+                    <span className="flex-1">{option.label}</span>
+                    {locale === option.locale ? (
+                      <Check className="h-4 w-4 text-primary" />
+                    ) : null}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="ghost"
               size="icon"

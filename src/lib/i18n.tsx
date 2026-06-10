@@ -4,10 +4,18 @@ import { createContext, useContext, useSyncExternalStore, ReactNode } from "reac
 import { useRouter } from "next/navigation";
 import en from "@/locales/en.json";
 import de from "@/locales/de.json";
+import es from "@/locales/es.json";
+import fr from "@/locales/fr.json";
+import it from "@/locales/it.json";
 
-export type Locale = "en" | "de";
+export type Locale = "en" | "de" | "es" | "fr" | "it";
 
-const translations = { en, de } as const;
+const translations = { en, de, es, fr, it } as const;
+const supportedLocales = ["en", "de", "es", "fr", "it"] as const;
+
+function isSupportedLocale(value: string | null): value is Locale {
+  return supportedLocales.includes(value as Locale);
+}
 
 interface I18nContextValue {
   locale: Locale;
@@ -37,12 +45,12 @@ function getBrowserLocale(): Locale {
   }
 
   const stored = window.localStorage.getItem("locale") as Locale | null;
-  if (stored === "en" || stored === "de") {
+  if (isSupportedLocale(stored)) {
     return stored;
   }
 
   const lang = window.navigator.language.split("-")[0];
-  return lang === "de" ? "de" : "en";
+  return isSupportedLocale(lang) ? lang : "en";
 }
 
 function subscribe(listener: () => void) {
