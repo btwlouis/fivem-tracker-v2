@@ -104,28 +104,7 @@ import { getRetentionHistoryCutoffDate } from "@/lib/server-freshness";
 import { Prisma } from "@prisma/client";
 
 const WRITE_BATCH_SIZE = 500;
-const UPDATE_CONCURRENCY = 50;
 const HISTORY_DELETE_BATCH_SIZE = 5000;
-
-async function runWithConcurrency<T>(
-  items: T[],
-  concurrency: number,
-  worker: (item: T) => Promise<unknown>
-) {
-  let nextIndex = 0;
-
-  const workers = Array.from(
-    { length: Math.min(concurrency, items.length) },
-    async () => {
-      while (nextIndex < items.length) {
-        const item = items[nextIndex++];
-        await worker(item);
-      }
-    }
-  );
-
-  await Promise.all(workers);
-}
 
 async function refreshServerStatsForServers(servers: ServerData[], timestamp: Date) {
   if (servers.length === 0) return;
@@ -152,6 +131,172 @@ async function refreshServerStatsForServers(servers: ServerData[], timestamp: Da
       "maxPlayers30d" = GREATEST("ServerStats"."maxPlayers30d", EXCLUDED."maxPlayers30d"),
       "lastSeen" = GREATEST("ServerStats"."lastSeen", EXCLUDED."lastSeen"),
       "updatedAt" = CURRENT_TIMESTAMP
+  `);
+}
+
+async function upsertServers(servers: ServerData[], timestamp: Date) {
+  if (servers.length === 0) return 0;
+
+  const values = Prisma.join(
+    servers.map((server) =>
+      Prisma.sql`(
+        ${server.id},
+        ${server.detailsLevel},
+        ${server.locale},
+        ${server.localeCountry},
+        ${server.hostname},
+        ${server.joinId},
+        ${server.historicalAddress},
+        ${server.historicalIconURL},
+        ${server.connectEndPoints},
+        ${server.rawVariables},
+        ${server.variables},
+        ${server.projectName},
+        ${server.projectDescription},
+        ${server.upvotePower},
+        ${server.burstPower},
+        ${server.offline},
+        ${server.mapname},
+        ${server.gametype},
+        ${server.gamename},
+        ${server.licenseKeyToken},
+        ${server.fallback},
+        ${server.private},
+        ${server.scriptHookAllowed},
+        ${server.enforceGameBuild},
+        ${server.pureLevel},
+        ${server.premium},
+        ${server.bannerConnecting},
+        ${server.bannerDetail},
+        ${server.canReview},
+        ${server.ownerID},
+        ${server.ownerName},
+        ${server.ownerAvatar},
+        ${server.ownerProfile},
+        ${server.activitypubFeed},
+        ${server.onesyncEnabled},
+        ${server.server},
+        ${server.supportStatus},
+        ${server.playersMax},
+        ${server.playersCurrent},
+        ${server.iconVersion},
+        ${server.tags},
+        ${server.resources},
+        ${server.players},
+        ${timestamp},
+        ${timestamp}
+      )`
+    )
+  );
+
+  return prisma.$executeRaw(Prisma.sql`
+    INSERT INTO "Server" (
+      "id",
+      "detailsLevel",
+      "locale",
+      "localeCountry",
+      "hostname",
+      "joinId",
+      "historicalAddress",
+      "historicalIconURL",
+      "connectEndPoints",
+      "rawVariables",
+      "variables",
+      "projectName",
+      "projectDescription",
+      "upvotePower",
+      "burstPower",
+      "offline",
+      "mapname",
+      "gametype",
+      "gamename",
+      "licenseKeyToken",
+      "fallback",
+      "private",
+      "scriptHookAllowed",
+      "enforceGameBuild",
+      "pureLevel",
+      "premium",
+      "bannerConnecting",
+      "bannerDetail",
+      "canReview",
+      "ownerID",
+      "ownerName",
+      "ownerAvatar",
+      "ownerProfile",
+      "activitypubFeed",
+      "onesyncEnabled",
+      "server",
+      "supportStatus",
+      "playersMax",
+      "playersCurrent",
+      "iconVersion",
+      "tags",
+      "resources",
+      "players",
+      "created_at",
+      "updated_at"
+    )
+    VALUES ${values}
+    ON CONFLICT ("id") DO UPDATE SET
+      "detailsLevel" = EXCLUDED."detailsLevel",
+      "locale" = EXCLUDED."locale",
+      "localeCountry" = EXCLUDED."localeCountry",
+      "hostname" = EXCLUDED."hostname",
+      "joinId" = EXCLUDED."joinId",
+      "historicalAddress" = EXCLUDED."historicalAddress",
+      "historicalIconURL" = EXCLUDED."historicalIconURL",
+      "connectEndPoints" = EXCLUDED."connectEndPoints",
+      "rawVariables" = EXCLUDED."rawVariables",
+      "variables" = EXCLUDED."variables",
+      "projectName" = EXCLUDED."projectName",
+      "projectDescription" = EXCLUDED."projectDescription",
+      "upvotePower" = EXCLUDED."upvotePower",
+      "burstPower" = EXCLUDED."burstPower",
+      "offline" = EXCLUDED."offline",
+      "mapname" = EXCLUDED."mapname",
+      "gametype" = EXCLUDED."gametype",
+      "gamename" = EXCLUDED."gamename",
+      "licenseKeyToken" = EXCLUDED."licenseKeyToken",
+      "fallback" = EXCLUDED."fallback",
+      "private" = EXCLUDED."private",
+      "scriptHookAllowed" = EXCLUDED."scriptHookAllowed",
+      "enforceGameBuild" = EXCLUDED."enforceGameBuild",
+      "pureLevel" = EXCLUDED."pureLevel",
+      "premium" = EXCLUDED."premium",
+      "bannerConnecting" = EXCLUDED."bannerConnecting",
+      "bannerDetail" = EXCLUDED."bannerDetail",
+      "canReview" = EXCLUDED."canReview",
+      "ownerID" = EXCLUDED."ownerID",
+      "ownerName" = EXCLUDED."ownerName",
+      "ownerAvatar" = EXCLUDED."ownerAvatar",
+      "ownerProfile" = EXCLUDED."ownerProfile",
+      "activitypubFeed" = EXCLUDED."activitypubFeed",
+      "onesyncEnabled" = EXCLUDED."onesyncEnabled",
+      "server" = EXCLUDED."server",
+      "supportStatus" = EXCLUDED."supportStatus",
+      "playersMax" = EXCLUDED."playersMax",
+      "playersCurrent" = EXCLUDED."playersCurrent",
+      "iconVersion" = EXCLUDED."iconVersion",
+      "tags" = EXCLUDED."tags",
+      "resources" = EXCLUDED."resources",
+      "players" = EXCLUDED."players",
+      "updated_at" = EXCLUDED."updated_at"
+  `);
+}
+
+async function insertServerHistory(servers: ServerData[], timestamp: Date) {
+  if (servers.length === 0) return 0;
+
+  const values = Prisma.join(
+    servers.map((server) =>
+      Prisma.sql`(${server.id}, ${server.playersCurrent ?? 0}, ${timestamp})`
+    )
+  );
+
+  return prisma.$executeRaw(Prisma.sql`
+    INSERT INTO "ServerHistory" (server_id, clients, timestamp)
+    VALUES ${values}
   `);
 }
 
@@ -241,10 +386,8 @@ export async function getServers() {
     const servers: ServerData[] = [];
     const timestamp = new Date();
 
-    await fetchServers(GameName.FiveM, async (server) => {
+    await fetchServers(GameName.FiveM, (server) => {
       try {
-        if(server.locale !== "de-DE") return; // only german servers
-
         const data = {
           detailsLevel: server.detailsLevel ?? 0,
           upvotePower: server.upvotePower ?? 0,
@@ -299,80 +442,21 @@ export async function getServers() {
     });
 
     console.log(`Fetched ${servers.length} servers`);
-    const sortedServers = servers
-      .sort((a, b) => b.playersCurrent - a.playersCurrent)
-      .slice(0, 10000);
 
-    const ids = sortedServers.map((server) => server.id);
+    let writtenServers = 0;
+    let writtenHistoryRows = 0;
 
-    const existingServers = await prisma.server.findMany({
-      where: { id: { in: ids } },
-      select: { id: true },
-    });
+    for (let i = 0; i < servers.length; i += WRITE_BATCH_SIZE) {
+      const batch = servers.slice(i, i + WRITE_BATCH_SIZE);
 
-    const existingIds = new Set(
-      existingServers.map((server: { id: string }) => server.id)
-    );
-
-    const toUpdate = sortedServers.filter((server) => existingIds.has(server.id));
-    const toCreate = sortedServers.filter((server) => !existingIds.has(server.id));
-
-    const createBatches = [];
-    const historyBatches = [];
-    const statsBatches = [];
-
-    for (let i = 0; i < toCreate.length; i += WRITE_BATCH_SIZE) {
-      const batch = toCreate.slice(i, i + WRITE_BATCH_SIZE);
-
-      createBatches.push(
-        prisma.server.createMany({ data: batch, skipDuplicates: true })
-      );
-
-      historyBatches.push(
-        prisma.serverHistory.createMany({
-          data: batch.map((server) => ({
-            server_id: server.id,
-            clients: server.playersCurrent ?? 0,
-            timestamp,
-          })),
-          skipDuplicates: true,
-        })
-      );
-
-      statsBatches.push(batch);
-    }
-
-    for (let i = 0; i < toUpdate.length; i += WRITE_BATCH_SIZE) {
-      const batch = toUpdate.slice(i, i + WRITE_BATCH_SIZE);
-
-      historyBatches.push(
-        prisma.serverHistory.createMany({
-          data: batch.map((server) => ({
-            server_id: server.id,
-            clients: server.playersCurrent ?? 0,
-            timestamp,
-          })),
-          skipDuplicates: true,
-        })
-      );
-
-      statsBatches.push(batch);
-    }
-    console.log(`To create: ${toCreate.length}, to update: ${toUpdate.length}`);
-    await Promise.allSettled(createBatches);
-
-    await runWithConcurrency(toUpdate, UPDATE_CONCURRENCY, (server) =>
-      prisma.server.update({
-        where: { id: server.id },
-        data: server,
-      })
-    );
-
-    await Promise.allSettled(historyBatches);
-
-    for (const batch of statsBatches) {
+      writtenServers += await upsertServers(batch, timestamp);
+      writtenHistoryRows += await insertServerHistory(batch, timestamp);
       await refreshServerStatsForServers(batch, timestamp);
     }
+
+    console.log(
+      `Wrote ${writtenServers} server rows and ${writtenHistoryRows} history rows`
+    );
 
     const time = performance.now() - perf;
     console.log(`Fetched and saved servers in ${time}ms`);
