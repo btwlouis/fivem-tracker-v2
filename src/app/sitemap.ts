@@ -43,7 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       orderBy: {
         updated_at: "desc",
       },
-      take: 5000,
+      take: 50000,
     });
 
     const serverEntries: MetadataRoute.Sitemap = servers.map(

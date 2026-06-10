@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useSyncExternalStore, ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import en from "@/locales/en.json";
 import de from "@/locales/de.json";
 
@@ -50,6 +51,7 @@ function subscribe(listener: () => void) {
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const locale = useSyncExternalStore<Locale>(
     subscribe,
     getBrowserLocale,
@@ -63,6 +65,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     }
 
     localeListeners.forEach((listener) => listener());
+    router.refresh();
   };
 
   const t = (key: string, vars?: Record<string, string | number>): string => {

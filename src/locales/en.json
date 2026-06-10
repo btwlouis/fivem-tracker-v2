@@ -32,6 +32,102 @@
     "retry": "Retry",
     "errorLoading": "Failed to load servers"
   },
+  "serverPage": {
+    "notFoundTitle": "Server not found",
+    "metaTitle": "{{name}} FiveM Server",
+    "metaDescription": "{{name}} is a listed {{country}} {{type}} server with {{current}} of {{max}} slots currently filled.",
+    "metaPeak": "The 30-day peak is {{peak}} players.",
+    "bannerAlt": "{{name}} FiveM server banner",
+    "fallbackDescription": "{{name}} is currently listed in FiveM Tracker.",
+    "relatedJsonLdName": "FiveM servers similar to {{name}}",
+    "unknown": "Unknown",
+    "backToList": "Back to server list",
+    "openServer": "Open server",
+    "badges": {
+      "private": "Private",
+      "public": "Public",
+      "active": "Active",
+      "lastActive": "Last active"
+    },
+    "relative": {
+      "lessThanHour": "less than 1 hour ago",
+      "hoursAgo": "{{count}} hours ago",
+      "daysAgo": "{{count}} days ago"
+    },
+    "stats": {
+      "livePlayers": "Live players",
+      "region": "Region",
+      "map": "Map",
+      "lastUpdate": "Last update"
+    },
+    "activitySummary": "{{name}} reached a peak of {{peak}} players in the last 30 days. On average, {{average}} players were recorded per sample, based on {{samples}} stored measurements.",
+    "activitySummaryEmpty": "There are not enough stored history points for {{name}} yet. This page will be expanded automatically with future cron imports.",
+    "analysis": {
+      "title": "30-day server analysis",
+      "description": "The tracker evaluates stored player counts, region, tags, map information, and updates so players can judge faster whether {{name}} matches their search. These values update automatically and make the server profile more distinct than a plain server listing."
+    },
+    "historyNumbers": {
+      "title": "History in numbers",
+      "peak": "30-day peak",
+      "average": "Average",
+      "samples": "Samples",
+      "peakTime": "Peak time"
+    },
+    "profile": {
+      "title": "Server profile",
+      "description": "Structured fields that provide context for players and search engines.",
+      "game": "Game",
+      "serverId": "Server ID",
+      "joinId": "Join ID"
+    },
+    "technical": {
+      "title": "Technical details",
+      "description": "Metadata for analysis, attribution, and server comparison.",
+      "software": "Server software",
+      "language": "Language",
+      "historicalAddress": "Historical address",
+      "supportStatus": "Support status",
+      "ownerProfile": "Owner profile",
+      "openProfile": "Open profile",
+      "connectEndpoints": "Connect endpoints"
+    },
+    "values": {
+      "allowed": "Allowed",
+      "notAllowed": "Not allowed",
+      "active": "Active",
+      "disabled": "Disabled",
+      "noPremium": "No premium",
+      "standard": "Standard"
+    },
+    "faqTitle": "Frequently asked questions about {{name}}",
+    "faqDescription": "Short answers from the available live and history data.",
+    "faq": {
+      "currentPlayers": {
+        "question": "How many players are currently on {{name}}?",
+        "answer": "{{current}} of {{max}} slots are currently filled on {{name}}."
+      },
+      "record": {
+        "question": "What player record does {{name}} have in the tracker?",
+        "answer": "The highest measured value in the last 30 days is {{peak}} players{{date}}.",
+        "dateSuffix": ", measured on {{date}}",
+        "empty": "No reliable 30-day record has been calculated for {{name}} yet."
+      },
+      "country": {
+        "question": "Which country is {{name}} from?",
+        "answer": "{{name}} is assigned to the {{country}} region in the tracker."
+      },
+      "join": {
+        "question": "How can I join {{name}}?",
+        "answer": "You can open {{name}} using join ID {{joinId}} or the FiveM connect link on this page.",
+        "empty": "No join ID is currently stored for {{name}}."
+      }
+    },
+    "related": {
+      "title": "Similar FiveM servers",
+      "description": "More active servers from the same region or with a similar game mode.",
+      "empty": "No matching similar servers found yet."
+    }
+  },
   "nav": {
     "title": "FiveM Tracker",
     "subtitle": "Live FiveM server list for roleplay, city and RP servers",

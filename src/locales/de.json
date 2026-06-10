@@ -32,6 +32,102 @@
     "retry": "Erneut versuchen",
     "errorLoading": "Server konnten nicht geladen werden"
   },
+  "serverPage": {
+    "notFoundTitle": "Server nicht gefunden",
+    "metaTitle": "{{name}} FiveM Server",
+    "metaDescription": "{{name}} ist ein gelisteter {{country}} {{type}} Server mit aktuell {{current}} von {{max}} belegten Slots.",
+    "metaPeak": "Der 30-Tage-Höchstwert liegt bei {{peak}} Spielern.",
+    "bannerAlt": "{{name}} FiveM Server Banner",
+    "fallbackDescription": "{{name}} ist aktuell im FiveM Tracker gelistet.",
+    "relatedJsonLdName": "Ähnliche FiveM Server wie {{name}}",
+    "unknown": "Unbekannt",
+    "backToList": "Zurück zur Serverliste",
+    "openServer": "Server öffnen",
+    "badges": {
+      "private": "Privat",
+      "public": "Öffentlich",
+      "active": "Aktiv",
+      "lastActive": "Zuletzt aktiv"
+    },
+    "relative": {
+      "lessThanHour": "vor weniger als 1 Stunde",
+      "hoursAgo": "vor {{count}} Stunden",
+      "daysAgo": "vor {{count}} Tagen"
+    },
+    "stats": {
+      "livePlayers": "Live-Spieler",
+      "region": "Region",
+      "map": "Map",
+      "lastUpdate": "Letztes Update"
+    },
+    "activitySummary": "{{name}} erreichte in den letzten 30 Tagen einen Peak von {{peak}} Spielern. Im Durchschnitt wurden {{average}} Spieler pro Messpunkt erfasst, basierend auf {{samples}} gespeicherten Messwerten.",
+    "activitySummaryEmpty": "Für {{name}} liegen aktuell noch nicht genug gespeicherte Verlaufspunkte vor. Die Seite wird mit neuen Cron-Imports automatisch erweitert.",
+    "analysis": {
+      "title": "30-Tage Server-Analyse",
+      "description": "Der Tracker wertet gespeicherte Spielerzahlen, Region, Tags, Map-Informationen und Aktualisierungen aus, damit Spieler schneller einschätzen können, ob {{name}} zu ihrer Suche passt. Diese Werte werden automatisch aktualisiert und machen das Serverprofil unterscheidbarer als eine reine Serverliste."
+    },
+    "historyNumbers": {
+      "title": "Verlauf in Zahlen",
+      "peak": "30-Tage-Peak",
+      "average": "Durchschnitt",
+      "samples": "Messpunkte",
+      "peakTime": "Peak-Zeitpunkt"
+    },
+    "profile": {
+      "title": "Server-Profil",
+      "description": "Strukturierte Felder, die Spielern und Suchmaschinen Kontext geben.",
+      "game": "Spiel",
+      "serverId": "Server-ID",
+      "joinId": "Join-ID"
+    },
+    "technical": {
+      "title": "Technische Details",
+      "description": "Metadaten für Analyse, Zuordnung und Serververgleich.",
+      "software": "Server-Software",
+      "language": "Sprache",
+      "historicalAddress": "Hist. Adresse",
+      "supportStatus": "Support-Status",
+      "ownerProfile": "Owner-Profil",
+      "openProfile": "Profil öffnen",
+      "connectEndpoints": "Connect-Endpunkte"
+    },
+    "values": {
+      "allowed": "Erlaubt",
+      "notAllowed": "Nicht erlaubt",
+      "active": "Aktiv",
+      "disabled": "Deaktiviert",
+      "noPremium": "Kein Premium",
+      "standard": "Standard"
+    },
+    "faqTitle": "Häufige Fragen zu {{name}}",
+    "faqDescription": "Kurze Antworten aus den vorhandenen Live- und Verlaufsdaten.",
+    "faq": {
+      "currentPlayers": {
+        "question": "Wie viele Spieler sind aktuell auf {{name}}?",
+        "answer": "Aktuell sind {{current}} von {{max}} Slots auf {{name}} belegt."
+      },
+      "record": {
+        "question": "Welchen Spielerrekord hat {{name}} im Tracker?",
+        "answer": "Der höchste gemessene Wert der letzten 30 Tage liegt bei {{peak}} Spielern{{date}}.",
+        "dateSuffix": ", gemessen am {{date}}",
+        "empty": "Für {{name}} wurde noch kein belastbarer 30-Tage-Rekord berechnet."
+      },
+      "country": {
+        "question": "Aus welchem Land ist {{name}}?",
+        "answer": "{{name}} ist im Tracker der Region {{country}} zugeordnet."
+      },
+      "join": {
+        "question": "Wie kann ich {{name}} beitreten?",
+        "answer": "Du kannst {{name}} über die Join-ID {{joinId}} beziehungsweise über den FiveM-Connect-Link auf dieser Seite öffnen.",
+        "empty": "Für {{name}} ist aktuell keine Join-ID im Tracker gespeichert."
+      }
+    },
+    "related": {
+      "title": "Ähnliche FiveM Server",
+      "description": "Weitere aktive Server aus derselben Region oder mit ähnlichem Spielmodus.",
+      "empty": "Noch keine passenden ähnlichen Server gefunden."
+    }
+  },
   "nav": {
     "title": "FiveM Tracker",
     "subtitle": "Live FiveM Serverliste fuer Roleplay, City- und RP-Server",
