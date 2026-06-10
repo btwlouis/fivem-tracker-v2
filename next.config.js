@@ -14,7 +14,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "servers-frontend.fivem.net",
+        hostname: "frontend.cfx-services.net",
       },
       {
         protocol: "https",

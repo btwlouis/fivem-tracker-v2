@@ -57,7 +57,7 @@ export function getServerColumns(
             <Image
               src={
                 iconVersion
-                  ? `https://servers-frontend.fivem.net/api/servers/icon/${id}/${iconVersion}.png`
+                  ? `https://frontend.cfx-services.net/api/servers/icon/${id}/${iconVersion}.png`
                   : `https://placehold.co/28x28/1a1a2e/4a90d9?text=FV`
               }
               width={28}

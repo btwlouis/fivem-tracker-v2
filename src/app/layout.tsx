@@ -76,8 +76,8 @@ export default function RootLayout({
       className={cn(spaceGrotesk.variable, "dark h-full font-sans", roboto.variable)}
     >
       <head>
-        <link rel="preconnect" href="https://servers-frontend.fivem.net" />
-        <link rel="dns-prefetch" href="https://servers-frontend.fivem.net" />
+        <link rel="preconnect" href="https://frontend.cfx-services.net" />
+        <link rel="dns-prefetch" href="https://frontend.cfx-services.net" />
         <link rel="preconnect" href="//analytics.onlouis.de" />
       </head>
       <body className="flex h-dvh flex-col bg-background font-sans text-foreground antialiased">

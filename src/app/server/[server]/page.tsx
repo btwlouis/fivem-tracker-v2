@@ -315,7 +315,7 @@ export default async function ServerPage({
               <div className="flex min-w-0 gap-4">
                 {serverData.iconVersion ? (
                   <Image
-                    src={`https://servers-frontend.fivem.net/api/servers/icon/${serverData.id}/${serverData.iconVersion}.png`}
+                    src={`https://frontend.cfx-services.net/api/servers/icon/${serverData.id}/${serverData.iconVersion}.png`}
                     width={72}
                     height={72}
                     alt={`${projectName} Icon`}
