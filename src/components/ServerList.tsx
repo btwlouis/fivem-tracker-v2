@@ -11,6 +11,7 @@ import { useTranslation } from "@/lib/i18n";
 import type { ServerListResponse, SortOption } from "@/lib/server-list-types";
 
 const PAGE_SIZE = 30;
+const ALL_COUNTRIES = "all";
 
 function ServerListSkeleton() {
   return (
@@ -60,10 +61,12 @@ export default function ServerList({ initialData }: ServerListProps) {
   const [isSearching, setIsSearching] = useState(false);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("players");
+  const [countryFilter, setCountryFilter] = useState(ALL_COUNTRIES);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const latestRequestRef = useRef(0);
   const prevSortRef = useRef<SortOption>("players");
+  const prevCountryRef = useRef(ALL_COUNTRIES);
   const hasLoadedDataRef = useRef(Boolean(initialData));
   const skipInitialFetchRef = useRef(Boolean(initialData));
 
@@ -72,11 +75,13 @@ export default function ServerList({ initialData }: ServerListProps) {
       page,
       search,
       sort,
+      country,
       append,
     }: {
       page: number;
       search: string;
       sort: SortOption;
+      country: string;
       append: boolean;
     }) => {
       const requestId = latestRequestRef.current + 1;
@@ -99,6 +104,7 @@ export default function ServerList({ initialData }: ServerListProps) {
           sort,
         });
         if (search.trim()) params.set("search", search.trim());
+        if (country !== ALL_COUNTRIES) params.set("locale", country);
 
         const response = await fetch(`/api/servers/list?${params.toString()}`, {
           cache: "no-store",
@@ -142,18 +148,32 @@ export default function ServerList({ initialData }: ServerListProps) {
     }
 
     const sortChanged = prevSortRef.current !== sortBy;
+    const countryChanged = prevCountryRef.current !== countryFilter;
     prevSortRef.current = sortBy;
+    prevCountryRef.current = countryFilter;
 
-    if (sortChanged) {
-      fetchServers({ page: 1, search: searchQuery, sort: sortBy, append: false });
+    if (sortChanged || countryChanged) {
+      fetchServers({
+        page: 1,
+        search: searchQuery,
+        sort: sortBy,
+        country: countryFilter,
+        append: false,
+      });
       return;
     }
 
     const timeoutId = window.setTimeout(() => {
-      fetchServers({ page: 1, search: searchQuery, sort: sortBy, append: false });
+      fetchServers({
+        page: 1,
+        search: searchQuery,
+        sort: sortBy,
+        country: countryFilter,
+        append: false,
+      });
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [fetchServers, searchQuery, sortBy]);
+  }, [countryFilter, fetchServers, searchQuery, sortBy]);
 
   const loadNextPage = useCallback(() => {
     if (!serverData || loading || isSearching || isFetchingMore || !serverData.hasMore) return;
@@ -161,9 +181,19 @@ export default function ServerList({ initialData }: ServerListProps) {
       page: serverData.currentPage + 1,
       search: activeSearchQuery,
       sort: sortBy,
+      country: countryFilter,
       append: true,
     });
-  }, [activeSearchQuery, fetchServers, isFetchingMore, isSearching, loading, serverData, sortBy]);
+  }, [
+    activeSearchQuery,
+    countryFilter,
+    fetchServers,
+    isFetchingMore,
+    isSearching,
+    loading,
+    serverData,
+    sortBy,
+  ]);
 
   useEffect(() => {
     const target = loadMoreRef.current;
@@ -199,7 +229,13 @@ export default function ServerList({ initialData }: ServerListProps) {
           variant="outline"
           size="sm"
           onClick={() =>
-            fetchServers({ page: 1, search: activeSearchQuery, sort: sortBy, append: false })
+            fetchServers({
+              page: 1,
+              search: activeSearchQuery,
+              sort: sortBy,
+              country: countryFilter,
+              append: false,
+            })
           }
         >
           <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
@@ -227,6 +263,9 @@ export default function ServerList({ initialData }: ServerListProps) {
         loadMoreRef={loadMoreRef}
         sortBy={sortBy}
         onSortChange={setSortBy}
+        countries={serverData.countries}
+        countryFilter={countryFilter}
+        onCountryChange={setCountryFilter}
       />
     </div>
   );

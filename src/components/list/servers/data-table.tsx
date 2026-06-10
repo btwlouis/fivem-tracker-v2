@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Loader2, Search, Trophy, TrendingUp, Users } from "lucide-react";
+import { ChevronDown, Globe2, Loader2, Search, Trophy, TrendingUp, Users } from "lucide-react";
+import { CircleFlag } from "react-circle-flags";
 import {
   ColumnDef,
   flexRender,
@@ -20,8 +21,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { SortOption } from "@/lib/server-list-types";
+import type { CountryFilterOption, SortOption } from "@/lib/server-list-types";
 import { useTranslation } from "@/lib/i18n";
 
 interface DataTableProps<TData, TValue> {
@@ -38,6 +48,9 @@ interface DataTableProps<TData, TValue> {
   loadMoreRef?: React.RefObject<HTMLDivElement | null>;
   sortBy?: SortOption;
   onSortChange?: (sort: SortOption) => void;
+  countries?: CountryFilterOption[];
+  countryFilter?: string;
+  onCountryChange?: (country: string) => void;
 }
 
 const SORT_OPTIONS: { key: SortOption; Icon: typeof Users }[] = [
@@ -45,6 +58,19 @@ const SORT_OPTIONS: { key: SortOption; Icon: typeof Users }[] = [
   { key: "upvotes", Icon: TrendingUp },
   { key: "record", Icon: Trophy },
 ];
+const ALL_COUNTRIES = "all";
+
+function isFlagCode(code: string) {
+  return /^[a-z]{2}$/.test(code.toLowerCase());
+}
+
+function getCountryName(code: string, locale: string) {
+  try {
+    return new Intl.DisplayNames([locale], { type: "region" }).of(code.toUpperCase()) ?? code;
+  } catch {
+    return code;
+  }
+}
 
 export function DataTable<TData, TValue>({
   columns,
@@ -60,10 +86,29 @@ export function DataTable<TData, TValue>({
   loadMoreRef,
   sortBy = "players",
   onSortChange,
+  countries = [],
+  countryFilter = ALL_COUNTRIES,
+  onCountryChange,
 }: DataTableProps<TData, TValue>) {
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const visibleColumnCount = Math.max(columns.length, 1);
   const skeletonRowCount = Math.min(Math.max(data.length, 8), 12);
+  const [countrySearch, setCountrySearch] = React.useState("");
+  const selectedCountry = countries.find((country) => country.code === countryFilter);
+  const selectedCountryLabel =
+    countryFilter === ALL_COUNTRIES
+      ? t("countryFilter.all")
+      : getCountryName(selectedCountry?.code ?? countryFilter, locale);
+  const filteredCountries = React.useMemo(() => {
+    const query = countrySearch.trim().toLowerCase();
+    if (!query) return countries;
+
+    return countries.filter((country) => {
+      const code = country.code.toLowerCase();
+      const name = getCountryName(country.code, locale).toLowerCase();
+      return code.includes(query) || name.includes(query);
+    });
+  }, [countries, countrySearch, locale]);
 
   const table = useReactTable({
     data,
@@ -82,7 +127,7 @@ export function DataTable<TData, TValue>({
     <Card className="grid h-full min-h-[calc(100dvh-var(--header-height,53px)-1rem)] w-full max-w-none flex-1 grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-xl border-border/70 bg-card/85 py-0 shadow-xl backdrop-blur sm:min-h-0 sm:rounded-[1.75rem]">
       {/* toolbar */}
       <div className="shrink-0 border-b border-border/60 bg-muted/20 px-3 py-2 sm:px-4 sm:py-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
           <div className="flex w-full items-center gap-1 rounded-full border border-border/70 bg-background/75 p-1 sm:w-auto">
             {SORT_OPTIONS.map(({ key, Icon }) => (
               <Button
@@ -112,6 +157,73 @@ export function DataTable<TData, TValue>({
               </div>
             )}
           </div>
+
+          <DropdownMenu onOpenChange={(open) => !open && setCountrySearch("")}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-10 min-w-0 flex-1 justify-between gap-2 rounded-full border-border/70 bg-background/75 px-3 shadow-none sm:max-w-56 sm:flex-none"
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  {countryFilter === ALL_COUNTRIES || !isFlagCode(countryFilter) ? (
+                    <Globe2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  ) : (
+                    <CircleFlag
+                      countryCode={countryFilter.toLowerCase()}
+                      height={18}
+                      width={18}
+                      className="shrink-0"
+                    />
+                  )}
+                  <span className="truncate text-sm">{selectedCountryLabel}</span>
+                </span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="max-h-80 w-72">
+              <DropdownMenuLabel>{t("countryFilter.label")}</DropdownMenuLabel>
+              <div className="relative p-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={countrySearch}
+                  onChange={(event) => setCountrySearch(event.target.value)}
+                  placeholder={t("countryFilter.searchPlaceholder")}
+                  className="h-9 rounded-md border-border/70 bg-background/75 pl-8 text-sm shadow-none"
+                />
+              </div>
+              <DropdownMenuRadioGroup value={countryFilter} onValueChange={onCountryChange}>
+                <DropdownMenuRadioItem value={ALL_COUNTRIES} className="cursor-pointer">
+                  <Globe2 className="h-4 w-4 text-muted-foreground" />
+                  <span className="min-w-0 flex-1 truncate">{t("countryFilter.all")}</span>
+                </DropdownMenuRadioItem>
+                <DropdownMenuSeparator />
+                {filteredCountries.map((country) => (
+                  <DropdownMenuRadioItem
+                    key={country.code}
+                    value={country.code}
+                    className="cursor-pointer"
+                  >
+                    {isFlagCode(country.code) ? (
+                      <CircleFlag
+                        countryCode={country.code.toLowerCase()}
+                        height={16}
+                        width={16}
+                        className="shrink-0"
+                      />
+                    ) : (
+                      <Globe2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    )}
+                    <span className="min-w-0 flex-1 truncate">
+                      {getCountryName(country.code, locale)}
+                    </span>
+                    <span className="text-xs tabular-nums text-muted-foreground">
+                      {new Intl.NumberFormat(locale).format(country.count)}
+                    </span>
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

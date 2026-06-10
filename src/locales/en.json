@@ -10,6 +10,11 @@
     "upvotes": "Upvotes",
     "record": "Record"
   },
+  "countryFilter": {
+    "label": "Filter by country",
+    "all": "All countries",
+    "searchPlaceholder": "Search country..."
+  },
   "table": {
     "searchPlaceholder": "Search server names...",
     "rank": "#",

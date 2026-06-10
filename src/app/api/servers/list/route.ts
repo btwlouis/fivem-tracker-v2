@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
         currentPage: page,
         totalPages: 0,
         hasMore: false,
+        countries: [],
         error: "Failed to fetch servers",
       },
       { status: 500 }

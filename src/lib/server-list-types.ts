@@ -1,5 +1,10 @@
 export type SortOption = "players" | "upvotes" | "record";
 
+export type CountryFilterOption = {
+  code: string;
+  count: number;
+};
+
 export type ServerListItem = {
   id: string;
   projectName: string | null;
@@ -20,4 +25,5 @@ export type ServerListResponse = {
   currentPage: number;
   totalPages: number;
   hasMore: boolean;
+  countries: CountryFilterOption[];
 };

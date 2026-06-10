@@ -2,10 +2,20 @@ import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { getVisibleHistoryCutoffDate } from "@/lib/server-freshness";
-import type { ServerListItem, ServerListResponse, SortOption } from "@/lib/server-list-types";
+import type {
+  CountryFilterOption,
+  ServerListItem,
+  ServerListResponse,
+  SortOption,
+} from "@/lib/server-list-types";
 
 type ServerRow = Omit<ServerListItem, "rank" | "record"> & {
   record: number | bigint;
+};
+
+type CountryRow = {
+  code: string;
+  count: number | bigint;
 };
 
 type GetServerListPageOptions = {
@@ -36,12 +46,13 @@ export async function getServerListPage({
   });
   const useSummary = activeSummaryCount > 0;
 
-  const conditions: Prisma.Sql[] = [
+  const baseConditions: Prisma.Sql[] = [
     Prisma.sql`s."playersCurrent" > 0`,
     useSummary
       ? Prisma.sql`st."lastSeen" >= ${historyCutoff}`
       : Prisma.sql`s.updated_at >= ${historyCutoff}`,
   ];
+  const conditions: Prisma.Sql[] = [...baseConditions];
 
   if (locale) {
     conditions.push(Prisma.sql`s."localeCountry" = ${locale}`);
@@ -55,6 +66,7 @@ export async function getServerListPage({
   }
 
   const whereClause = Prisma.join(conditions, " AND ");
+  const countryWhereClause = Prisma.join(baseConditions, " AND ");
 
   const orderClause =
     sort === "record"
@@ -63,7 +75,7 @@ export async function getServerListPage({
         ? Prisma.sql`s."upvotePower" DESC NULLS LAST`
         : Prisma.sql`s."playersCurrent" DESC`;
 
-  const [servers, countResult] = await Promise.all([
+  const [servers, countResult, countryRows] = await Promise.all([
     prisma.$queryRaw<ServerRow[]>(Prisma.sql`
       SELECT
         s.id,
@@ -88,9 +100,23 @@ export async function getServerListPage({
       LEFT JOIN "ServerStats" st ON st.server_id = s.id
       WHERE ${whereClause}
     `),
+    prisma.$queryRaw<CountryRow[]>(Prisma.sql`
+      SELECT s."localeCountry" AS code, COUNT(*) AS count
+      FROM "Server" s
+      LEFT JOIN "ServerStats" st ON st.server_id = s.id
+      WHERE ${countryWhereClause}
+      GROUP BY s."localeCountry"
+      ORDER BY count DESC, s."localeCountry" ASC
+    `),
   ]);
 
   const totalCount = Number(countResult[0]?.count ?? 0);
+  const countries: CountryFilterOption[] = countryRows
+    .filter((country) => Boolean(country.code))
+    .map((country) => ({
+      code: country.code,
+      count: Number(country.count),
+    }));
 
   return {
     servers: servers.map((server, index) => ({
@@ -102,5 +128,6 @@ export async function getServerListPage({
     currentPage: normalizedPage,
     totalPages: Math.ceil(totalCount / normalizedPageSize),
     hasMore: skip + servers.length < totalCount,
+    countries,
   };
 }
