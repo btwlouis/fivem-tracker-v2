@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import ServerList from "@/components/ServerList";
 import { prisma } from "@/lib/prisma";
@@ -92,7 +93,9 @@ async function getHomepageData() {
     initialServerData,
     totalServers: initialServerData.totalCount || stats._count.server_id,
     totalPlayers: stats._sum.currentPlayers || 0,
-    countries: countries.map((country) => country.localeCountry).filter(Boolean),
+    countries: countries
+      .map((country) => country.localeCountry)
+      .filter(Boolean),
   };
 }
 
@@ -104,7 +107,9 @@ export async function generateMetadata(): Promise<Metadata> {
     title: "FiveM Server Liste mit Live-Spielerzahlen und Server-Detailseiten",
     description:
       totalServers > 0
-        ? `Finde ${totalServers} aktive FiveM Server mit aktuell ${totalPlayers} Live-Spielern, Server-Historie und indexierbaren Detailseiten. Regionen im Tracker: ${countryText || "mehrere Länder"}.`
+        ? `Finde ${totalServers} aktive FiveM Server mit aktuell ${totalPlayers} Live-Spielern, Server-Historie und indexierbaren Detailseiten. Regionen im Tracker: ${
+            countryText || "mehrere Länder"
+          }.`
         : siteConfig.description,
     keywords: [
       ...siteConfig.keywords,
@@ -158,6 +163,14 @@ export default async function Home() {
       />
 
       <div className="container mx-auto flex h-full min-h-0 w-full flex-col gap-2 px-2 py-2 sm:gap-5 sm:px-4 sm:py-6">
+        <nav aria-label="Serververzeichnis" className="flex justify-end">
+          <Link
+            href="/servers/page/1"
+            className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+          >
+            Alle aktiven Server durchsuchen
+          </Link>
+        </nav>
         <section className="flex min-h-0 flex-1 w-full">
           <ServerList initialData={initialServerData} />
         </section>
