@@ -94,6 +94,7 @@ export async function fetchServers(
     } else if (error.code === "ECONNRESET") {
       console.error("Connection was reset. Please try again later.");
     }
+    throw error;
   } finally {
     console.timeEnd("Total fetchServers");
   }
@@ -111,7 +112,7 @@ async function refreshServerStatsForServers(servers: ServerData[], timestamp: Da
 
   const values = Prisma.join(
     servers.map((server) =>
-      Prisma.sql`(${server.id}, ${server.playersCurrent ?? 0}, ${timestamp})`
+      Prisma.sql`(${server.id}, ${server.playersCurrent ?? 0}::integer, ${timestamp}::timestamp)`
     )
   );
 
@@ -462,6 +463,7 @@ export async function getServers() {
     console.log(`Fetched and saved servers in ${time}ms`);
   } catch (error) {
     console.error("Failed to fetch servers:", error);
+    throw error;
   }
 }
 

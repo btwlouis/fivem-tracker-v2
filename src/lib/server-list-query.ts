@@ -38,19 +38,10 @@ export async function getServerListPage({
   const skip = (normalizedPage - 1) * normalizedPageSize;
   const trimmedSearch = search.trim();
   const historyCutoff = getVisibleHistoryCutoffDate();
-  const activeSummaryCount = await prisma.serverStats.count({
-    where: {
-      currentPlayers: { gt: 0 },
-      lastSeen: { gte: historyCutoff },
-    },
-  });
-  const useSummary = activeSummaryCount > 0;
 
   const baseConditions: Prisma.Sql[] = [
     Prisma.sql`s."playersCurrent" > 0`,
-    useSummary
-      ? Prisma.sql`st."lastSeen" >= ${historyCutoff}`
-      : Prisma.sql`s.updated_at >= ${historyCutoff}`,
+    Prisma.sql`s.updated_at >= ${historyCutoff}`,
   ];
   const conditions: Prisma.Sql[] = [...baseConditions];
 
@@ -61,7 +52,7 @@ export async function getServerListPage({
   if (trimmedSearch) {
     const pattern = `%${trimmedSearch}%`;
     conditions.push(
-      Prisma.sql`(s."projectName" ILIKE ${pattern} OR s."projectDescription" ILIKE ${pattern})`
+      Prisma.sql`(s.id ILIKE ${pattern} OR s."projectName" ILIKE ${pattern} OR s."projectDescription" ILIKE ${pattern})`
     );
   }
 

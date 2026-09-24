@@ -66,6 +66,7 @@ export function getServerColumns(
               sizes="28px"
               alt={t("table.serverIcon")}
               className="h-7 w-7 shrink-0 rounded-md object-cover"
+              unoptimized={Boolean(iconVersion)}
             />
             <div className="min-w-0">
               <Link
