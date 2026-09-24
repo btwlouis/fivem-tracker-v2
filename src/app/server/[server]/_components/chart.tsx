@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Area, AreaChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from "recharts";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ReferenceLine,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { Activity, Sparkles, TrendingUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -34,35 +41,42 @@ const chartConfig = {
 const timeRanges = ["1h", "1d", "7d", "1m"] as const;
 type TimeRange = (typeof timeRanges)[number];
 
-function convertToChartData(rawData: ServerHistory[], range: TimeRange) {
+function convertToChartData(rawData: ServerHistory[]) {
   return rawData
-    .map((item) => {
-      const date = new Date(item.timestamp);
+    .map((item) => ({
+      time: new Date(item.timestamp).getTime(),
+      clients: item.clients,
+    }))
+    .sort((a, b) => a.time - b.time);
+}
 
-      return {
-        timestamp:
-          range === "7d" || range === "1m"
-            ? date.toLocaleDateString("de-DE", {
-                month: "short",
-                day: "2-digit",
-              })
-            : date.toLocaleTimeString("de-DE", {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-        clients: item.clients,
-      };
-    })
-    .reverse();
+function formatAxisTime(value: number, range: TimeRange) {
+  const date = new Date(value);
+  return range === "7d" || range === "1m"
+    ? date.toLocaleDateString("de-DE", { month: "short", day: "2-digit" })
+    : date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatTooltipTime(value: number) {
+  if (!Number.isFinite(value)) return "";
+  return new Date(value).toLocaleString("de-DE", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export function Chart({ serverId }: { serverId: string }) {
   const [range, setRange] = useState<TimeRange>("1d");
   const [rawData, setRawData] = useState<ServerHistory[]>([]);
-  const chartData = useMemo(
-    () => convertToChartData(rawData, range),
-    [range, rawData]
-  );
+  const [hoverPosition, setHoverPosition] = useState<{
+    x: number;
+    tooltipX: number;
+    tooltipY: number;
+  } | null>(null);
+  const chartData = useMemo(() => convertToChartData(rawData), [rawData]);
 
   const peakPlayers =
     chartData.length > 0
@@ -72,14 +86,29 @@ export function Chart({ serverId }: { serverId: string }) {
     chartData.length > 0 ? chartData[chartData.length - 1]?.clients || 0 : 0;
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchData = async () => {
-      const response = await fetch(`/api/server-history/${serverId}?range=${range}`);
+      try {
+        const response = await fetch(
+          `/api/server-history/${serverId}?range=${range}`,
+          {
+            signal: controller.signal,
+          }
+        );
+        if (!response.ok) throw new Error("Failed to load server history");
 
-      const data: ServerHistory[] = await response.json();
-      setRawData(data);
+        const data: ServerHistory[] = await response.json();
+        setRawData(data);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error("Failed to load server history:", error);
+          setRawData([]);
+        }
+      }
     };
 
     fetchData();
+    return () => controller.abort();
   }, [range, serverId]);
 
   return (
@@ -92,7 +121,8 @@ export function Chart({ serverId }: { serverId: string }) {
               Spielerverlauf
             </CardTitle>
             <CardDescription className="mt-1 max-w-2xl">
-              Zeitverlauf der Spielerzahlen für diesen Server mit direkter, indexierbarer Darstellung.
+              Zeitverlauf der Spielerzahlen für diesen Server mit direkter,
+              indexierbarer Darstellung.
             </CardDescription>
           </div>
 
@@ -120,7 +150,12 @@ export function Chart({ serverId }: { serverId: string }) {
           {timeRanges.map((item) => (
             <Button
               key={item}
-              onClick={() => setRange(item)}
+              onClick={() => {
+                if (range === item) return;
+                setRange(item);
+                setRawData([]);
+                setHoverPosition(null);
+              }}
               variant={range === item ? "default" : "outline"}
               className="min-w-12"
             >
@@ -131,70 +166,115 @@ export function Chart({ serverId }: { serverId: string }) {
       </CardFooter>
 
       <CardContent className="p-4 sm:p-5">
-        <ChartContainer
-          config={chartConfig}
-          className="h-[380px] w-full max-w-none [&_.recharts-cartesian-grid_line]:stroke-border/70 [&_.recharts-curve.recharts-reference-line-line]:stroke-muted-foreground/40 [&_.recharts-text]:fill-muted-foreground"
-        >
-          <AreaChart
-            accessibilityLayer
-            data={chartData}
-            margin={{ left: 8, right: 8, top: 12, bottom: 0 }}
+        <div className="relative">
+          <ChartContainer
+            config={chartConfig}
+            className="relative h-[380px] w-full max-w-none [&_.recharts-cartesian-grid_line]:stroke-border/70 [&_.recharts-curve.recharts-reference-line-line]:stroke-muted-foreground/40 [&_.recharts-text]:fill-muted-foreground"
+            onMouseMove={(event) => {
+              const bounds = event.currentTarget.getBoundingClientRect();
+              const x = event.clientX - bounds.left;
+              const y = event.clientY - bounds.top;
+              setHoverPosition({
+                x,
+                tooltipX:
+                  x + 170 > bounds.width ? Math.max(0, x - 170) : x + 12,
+                tooltipY: y + 80 > bounds.height ? Math.max(0, y - 80) : y + 12,
+              });
+            }}
+            onMouseLeave={() => setHoverPosition(null)}
           >
-            <defs>
-              <linearGradient id={`playersArea-${serverId}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--color-clients)" stopOpacity={0.28} />
-                <stop offset="65%" stopColor="var(--color-clients)" stopOpacity={0.1} />
-                <stop offset="100%" stopColor="var(--color-clients)" stopOpacity={0} />
-              </linearGradient>
-            </defs>
+            <AreaChart
+              accessibilityLayer
+              data={chartData}
+              margin={{ left: 8, right: 8, top: 12, bottom: 0 }}
+            >
+              <defs>
+                <linearGradient
+                  id={`playersArea-${serverId}`}
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="0%"
+                    stopColor="var(--color-clients)"
+                    stopOpacity={0.28}
+                  />
+                  <stop
+                    offset="65%"
+                    stopColor="var(--color-clients)"
+                    stopOpacity={0.1}
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="var(--color-clients)"
+                    stopOpacity={0}
+                  />
+                </linearGradient>
+              </defs>
 
-            <CartesianGrid vertical={false} />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              width={34}
-              allowDecimals={false}
-            />
-            <XAxis
-              dataKey="timestamp"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-            />
-            {peakPlayers > 0 ? (
-              <ReferenceLine
-                y={peakPlayers}
-                stroke="var(--muted-foreground)"
-                strokeDasharray="4 4"
-                strokeOpacity={0.4}
+              <CartesianGrid vertical={false} />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                width={34}
+                allowDecimals={false}
               />
-            ) : null}
-            <ChartTooltip
-              cursor={{
-                stroke: "var(--primary)",
-                strokeWidth: 1,
-                strokeDasharray: "3 3",
-              }}
-              content={<ChartTooltipContent className="shadow-lg" />}
+              <XAxis
+                dataKey="time"
+                type="number"
+                scale="time"
+                domain={["dataMin", "dataMax"]}
+                tickFormatter={(value: number) => formatAxisTime(value, range)}
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+              />
+              {peakPlayers > 0 ? (
+                <ReferenceLine
+                  y={peakPlayers}
+                  stroke="var(--muted-foreground)"
+                  strokeDasharray="4 4"
+                  strokeOpacity={0.4}
+                />
+              ) : null}
+              <ChartTooltip
+                cursor={false}
+                isAnimationActive={false}
+                position={
+                  hoverPosition
+                    ? { x: hoverPosition.tooltipX, y: hoverPosition.tooltipY }
+                    : undefined
+                }
+                content={
+                  <ChartTooltipContent
+                    className="shadow-lg"
+                    labelFormatter={(_, payload) =>
+                      formatTooltipTime(Number(payload?.[0]?.payload?.time))
+                    }
+                  />
+                }
+              />
+              <Area
+                type="monotone"
+                dataKey="clients"
+                fill={`url(#playersArea-${serverId})`}
+                stroke="var(--color-clients)"
+                strokeWidth={2.5}
+                dot={false}
+                activeDot={false}
+                isAnimationActive={false}
+              />
+            </AreaChart>
+          </ChartContainer>
+          {hoverPosition && chartData.length > 0 ? (
+            <div
+              className="pointer-events-none absolute bottom-8 top-3 border-l border-dashed border-primary/60"
+              style={{ left: hoverPosition.x }}
             />
-            <Area
-              type="monotone"
-              dataKey="clients"
-              fill={`url(#playersArea-${serverId})`}
-              stroke="var(--color-clients)"
-              strokeWidth={2.5}
-              dot={false}
-              activeDot={{
-                r: 6,
-                fill: "var(--background)",
-                stroke: "var(--color-clients)",
-                strokeWidth: 3,
-              }}
-              animationDuration={700}
-              animationEasing="ease-out"
-            />
-          </AreaChart>
-        </ChartContainer>
+          ) : null}
+        </div>
       </CardContent>
     </Card>
   );
