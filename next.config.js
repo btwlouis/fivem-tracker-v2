@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    useCache: true,
     staticGenerationRetryCount: 1,
     staticGenerationMaxConcurrency: 8,
     staticGenerationMinPagesPerWorker: 25,

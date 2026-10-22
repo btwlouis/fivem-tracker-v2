@@ -1,6 +1,6 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import Image from "next/image";
 import Link from "next/link";
 import { Trophy } from "lucide-react";
@@ -9,6 +9,7 @@ import { CircleFlag } from "react-circle-flags";
 import { Badge } from "@/components/ui/badge";
 import type { ServerListItem } from "@/lib/server-list-types";
 import { colorMap, formatCompactNumber, parseServerTags, stripFivemFormatting } from "@/lib/utils";
+import type { serverTableFeatures } from "./table-features";
 
 function escapeHtml(str: string): string {
   return str
@@ -38,7 +39,7 @@ function formatFivemName(name: string | null): string {
 
 export function getServerColumns(
   t: (key: string, vars?: Record<string, string | number>) => string
-): ColumnDef<ServerListItem>[] {
+): ColumnDef<typeof serverTableFeatures, ServerListItem>[] {
   return [
     {
       id: "server",

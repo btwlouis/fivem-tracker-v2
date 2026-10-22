@@ -1,14 +1,11 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { ChevronDown, Globe2, Loader2, Search, Trophy, TrendingUp, Users } from "lucide-react";
 import { CircleFlag } from "react-circle-flags";
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { flexRender, useTable } from "@tanstack/react-table";
+import type { ColumnDef, RowData } from "@tanstack/react-table";
 
 import {
   Table,
@@ -33,9 +30,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CountryFilterOption, SortOption } from "@/lib/server-list-types";
 import { useTranslation } from "@/lib/i18n";
+import { serverTableFeatures } from "./table-features";
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
+interface DataTableProps<TData extends RowData> {
+  columns: ColumnDef<typeof serverTableFeatures, TData>[];
   data: TData[];
   totalCount: number;
   searchQuery?: string;
@@ -72,7 +70,7 @@ function getCountryName(code: string, locale: string) {
   }
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends RowData>({
   columns,
   data,
   totalCount,
@@ -89,7 +87,8 @@ export function DataTable<TData, TValue>({
   countries = [],
   countryFilter = ALL_COUNTRIES,
   onCountryChange,
-}: DataTableProps<TData, TValue>) {
+}: DataTableProps<TData>) {
+  const router = useRouter();
   const { locale, t } = useTranslation();
   const visibleColumnCount = Math.max(columns.length, 1);
   const skeletonRowCount = Math.min(Math.max(data.length, 8), 12);
@@ -110,16 +109,16 @@ export function DataTable<TData, TValue>({
     });
   }, [countries, countrySearch, locale]);
 
-  const table = useReactTable({
+  const table = useTable({
+    features: serverTableFeatures,
     data,
     columns,
-    getCoreRowModel: getCoreRowModel(),
   });
 
   const redirectServer = (server: TData) => {
     const candidate = server as { id?: string };
     if (candidate.id) {
-      window.location.href = `/server/${candidate.id}`;
+      router.push(`/server/${candidate.id}`);
     }
   };
 
